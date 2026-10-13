@@ -1,4 +1,4 @@
-.app-shell {
+.route-page {
   display: grid;
   min-height: 100vh;
   min-height: 100dvh;
@@ -6,7 +6,7 @@
   place-items: center;
 }
 
-.welcome-card {
+.route-card {
   width: min(100%, 480px);
   padding: clamp(var(--space-6), 6vw, var(--space-10));
   border: 1px solid var(--color-border);
@@ -15,42 +15,43 @@
   box-shadow: var(--shadow-card);
 }
 
-.welcome-card__eyebrow {
+.route-card__eyebrow {
   margin: 0 0 var(--space-4);
   color: var(--color-primary);
   font-size: var(--font-size-xs);
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.welcome-card h1 {
+.route-card h1 {
   margin: 0;
-  color: var(--color-primary);
-  font-size: clamp(2rem, 7vw, 3rem);
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  line-height: 1.15;
-}
-
-.welcome-card__subtitle {
-  margin: var(--space-2) 0 0;
   color: var(--color-text);
-  font-size: var(--font-size-lg);
+  font-size: clamp(24px, 5vw, 36px);
   font-weight: 600;
+  line-height: 1.2;
 }
 
-.welcome-card__divider {
-  width: 64px;
-  height: 4px;
-  margin: var(--space-8) 0;
-  border-radius: var(--radius-pill);
-  background: var(--color-accent);
-}
-
-.welcome-card__description {
-  max-width: 30ch;
-  margin: 0;
+.route-card__description {
+  margin: var(--space-4) 0 0;
   color: var(--color-text-muted);
   line-height: 1.6;
+}
+
+.route-card__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: var(--space-8);
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-sm);
+  background: var(--color-accent);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.route-card__link:hover {
+  background: var(--color-accent-soft);
 }
