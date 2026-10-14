@@ -1,0 +1,17 @@
+.manager-layout {
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--color-background);
+}
+
+.manager-layout__content {
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .manager-layout {
+    display: block;
+  }
+}
