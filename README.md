@@ -1,4 +1,11 @@
-# React + TypeScript + Vite
+# KAIROS — Web do gerente
+
+Aplicação em React, Vite e TypeScript. Para executar: `npm ci` e `npm run dev`.
+O Login em `/login` usa autenticação por sessão da API Spring Boot. Veja [configuração e limites do Login](docs/login-api.md) para configurar a URL, CORS e a conta de gerente.
+
+Verificações: `npm run test`, `npm run lint` e `npm run build`.
+
+## Referência do setup Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 

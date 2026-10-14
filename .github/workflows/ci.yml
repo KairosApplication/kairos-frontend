@@ -31,5 +31,7 @@ jobs:
         run: npm ci
       - name: Check lint
         run: npm run lint
+      - name: Test authentication service
+        run: npm run test
       - name: Check TypeScript and production build
         run: npm run build
