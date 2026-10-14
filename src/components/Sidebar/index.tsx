@@ -55,7 +55,8 @@ function Sidebar() {
       </div>
 
       <nav className="sidebar__nav" aria-label="Navegação principal">
-        {managerPages.map(({ path, title }) => {
+        {managerPages.map((page) => {
+          const { path, title } = page
           const Icon = iconsByPath[path]
 
           return (
@@ -68,7 +69,7 @@ function Sidebar() {
               to={path}
             >
               <Icon size={18} strokeWidth={1.8} aria-hidden="true" />
-              <span>{title}</span>
+              <span>{'navTitle' in page ? page.navTitle : title}</span>
             </NavLink>
           )
         })}
