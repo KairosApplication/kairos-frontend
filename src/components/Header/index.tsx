@@ -2,6 +2,7 @@ import { Bell, Search } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router'
 import { managerPages } from '../../routes/managerPages'
+import { useSessionIdentity } from '../../hooks/useSessionIdentity'
 import './styles.css'
 
 function normalize(value: string) {
@@ -9,6 +10,7 @@ function normalize(value: string) {
 }
 
 function Header() {
+  const { email, initials } = useSessionIdentity()
   const { pathname } = useLocation()
   const currentPage = managerPages.find(({ path }) => path === pathname)
   const [query, setQuery] = useState('')
@@ -110,11 +112,11 @@ function Header() {
           )}
         </div>
 
-        <Link className="manager-header__profile" to="/perfil" aria-label="Meu perfil — Ana Costa, conta demonstrativa">
-          <span className="manager-header__avatar" aria-hidden="true">AC</span>
+        <Link className="manager-header__profile" to="/perfil" aria-label={`Meu perfil — ${email}`}>
+          <span className="manager-header__avatar" aria-hidden="true">{initials}</span>
           <span className="manager-header__profile-details">
-            <strong>Ana Costa</strong>
-            <small>Gerente · Demonstração</small>
+            <strong title={email}>{email}</strong>
+            <small>Gerente</small>
           </span>
         </Link>
       </div>

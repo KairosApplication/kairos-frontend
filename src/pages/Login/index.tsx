@@ -1,14 +1,17 @@
 import { ArrowRight, ChartColumn, Eye, EyeOff, Lightbulb, Mail, Map, RefreshCw, ShieldCheck } from 'lucide-react'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router'
+import { useLocation, useNavigate } from 'react-router'
 import logo from '../../assets/kairos-logo.svg'
-import { login } from '../../services/authService'
+import { useAuth } from '../../hooks/useAuth'
+import { loginDestination } from '../../routes/loginDestination'
 import './styles.css'
 
 type FieldErrors = { email?: string; password?: string }
 
 function Login() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const { signIn, state: auth } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -43,8 +46,8 @@ function Login() {
     submittingRef.current = true
     setLoading(true)
     try {
-      await login({ email, password })
-      navigate('/dashboard', { replace: true })
+      await signIn({ email, password })
+      navigate(loginDestination(location.state), { replace: true })
     } catch (cause: unknown) {
       setError(cause instanceof Error ? cause.message : 'Não foi possível entrar. Tente novamente.')
     } finally {
@@ -86,6 +89,9 @@ function Login() {
           <span className="login-access__badge">Acesso do gerente</span>
           <h1 id="login-title">Bem-vindo de volta</h1>
           <p className="login-access__intro">Entre na sua conta para acompanhar a loja.</p>
+          {auth.reason === 'expired' && <p className="login-form__help" role="status">Sua sessão expirou. Entre novamente para continuar.</p>}
+          {auth.reason === 'signed-out' && <p className="login-form__help" role="status">Você saiu da sua conta.</p>}
+          {auth.reason === 'forbidden' && <p className="login-form__error" role="alert">Esta conta não tem acesso ao painel do gerente.</p>}
 
           <form className="login-form" onSubmit={handleSubmit} noValidate aria-busy={loading}>
             <div className="login-form__field">

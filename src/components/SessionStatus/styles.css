@@ -1,0 +1,5 @@
+.session-status__retry {
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+}
