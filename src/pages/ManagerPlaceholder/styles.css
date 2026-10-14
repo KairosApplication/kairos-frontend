@@ -1,0 +1,27 @@
+.manager-page {
+  min-width: 0;
+  padding: 32px;
+}
+
+.manager-page__placeholder {
+  margin: 0;
+  padding: 24px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  box-shadow: var(--shadow-card);
+  line-height: 1.6;
+}
+
+@media (max-width: 900px) {
+  .manager-page {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 600px) {
+  .manager-page {
+    padding: 24px 16px;
+  }
+}

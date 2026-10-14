@@ -1,0 +1,228 @@
+.manager-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 80px;
+  padding: 12px 32px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.manager-header__breadcrumb ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.manager-header__breadcrumb li + li::before {
+  content: '/';
+  margin-right: 8px;
+}
+
+.manager-header__breadcrumb a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.manager-header__breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+.manager-header__tools {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.manager-header__search,
+.manager-header__notifications {
+  position: relative;
+}
+
+.manager-header__search {
+  min-width: 0;
+  width: 280px;
+}
+
+.manager-header__search-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-background);
+  color: var(--color-text-muted);
+}
+
+.manager-header__search-field svg {
+  flex-shrink: 0;
+}
+
+.manager-header__search input {
+  min-width: 0;
+  width: 100%;
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  font-size: 12px;
+}
+
+.manager-header__search input::placeholder {
+  color: var(--color-text-muted);
+  opacity: 1;
+}
+
+.manager-header__notification-button {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-primary);
+  cursor: pointer;
+}
+
+.manager-header__notification-button:hover {
+  background: var(--color-background);
+}
+
+.manager-header__panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 10;
+  width: 280px;
+  max-width: calc(100vw - 32px);
+  max-height: 360px;
+  overflow-y: auto;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.manager-header__panel h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.manager-header__panel p {
+  margin: 8px 0 0;
+  color: var(--color-text-muted);
+}
+
+.manager-header__panel .manager-header__result-count {
+  margin-top: 0;
+}
+
+.manager-header__panel ul {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.manager-header__panel li a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.manager-header__panel li a:hover {
+  background: var(--color-background);
+}
+
+.manager-header__profile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  min-height: 44px;
+  border-radius: var(--radius-sm);
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.manager-header__avatar {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 50%;
+  background: #e5f4eb;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.manager-header__profile strong,
+.manager-header__profile small {
+  display: block;
+  font-size: 12px;
+}
+
+.manager-header__profile small {
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--color-text-muted);
+}
+
+.manager-header__profile:hover strong {
+  text-decoration: underline;
+}
+
+@media (max-width: 1200px) {
+  .manager-header {
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 16px 24px;
+  }
+
+  .manager-header__tools {
+    flex: 1 1 100%;
+  }
+
+  .manager-header__search {
+    flex: 1;
+  }
+
+  .manager-header__search .manager-header__panel {
+    left: 0;
+    right: auto;
+    width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .manager-header {
+    padding: 16px;
+  }
+
+  .manager-header__tools {
+    gap: 8px;
+  }
+
+  .manager-header__profile-details {
+    display: none;
+  }
+
+  .manager-header__notifications .manager-header__panel {
+    right: -48px;
+  }
+}
