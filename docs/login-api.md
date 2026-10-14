@@ -25,7 +25,7 @@ O service valida os payloads recebidos, trata status HTTP e falhas de rede e lim
 ## Ciclo de sessão
 
 - `AuthProvider` e reducer tipado centralizam identidade, carregamento, erro e saída. A sessão é consultada ao abrir a aplicação, navegar e retornar à janela/aba autenticada. Não há polling que prolongue a sessão durante inatividade.
-- Enquanto `/me` está pendente ou falha, as rotas protegidas exibem verificação ou erro com nova tentativa. Falha de rede não é tratada como logout.
+- Na primeira consulta de `/me`, as rotas protegidas aguardam confirmação. Sessões já confirmadas são revalidadas em segundo plano, mantendo layout e estado local durante a navegação. Falhas bloqueiam o painel com erro e nova tentativa; falha de rede não é tratada como logout.
 - `401` remove a identidade e exige novo login; expiração detectada durante o uso exibe aviso. `403` e perfis sem `MANAGER` bloqueiam o painel.
 - O logout na sidebar, disponível também no celular, busca CSRF atualizado e só confirma a saída após resposta `204` ou `401`. Falhas bloqueiam o conteúdo e permitem verificar novamente a sessão. Respostas antigas de restauração são ignoradas após login/logout.
 - Header e sidebar exibem e-mail e iniciais derivados da sessão, pois `/me` não fornece nome completo. A duração da sessão é determinada pela API e seus cookies.

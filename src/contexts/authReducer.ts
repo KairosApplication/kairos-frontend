@@ -25,6 +25,9 @@ export const initialAuthState: AuthState = {
 export function authReducer(state: AuthState, action: AuthAction): AuthState {
   switch (action.type) {
     case 'CHECK_STARTED':
+      // Revalidate confirmed sessions without unmounting the manager layout.
+      // Missing, forbidden or failed sessions still clear access below.
+      if (state.status === 'authenticated') return state
       return { ...state, status: 'checking', user: null, error: null, signingOut: false }
     case 'SESSION_FOUND':
       return { status: 'authenticated', user: action.user, error: null, reason: null, signingOut: false }

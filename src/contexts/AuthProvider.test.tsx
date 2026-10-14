@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { StrictMode } from 'react'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { MemoryRouter, Route, Routes } from 'react-router'
+import { Link, MemoryRouter, Outlet, Route, Routes } from 'react-router'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import * as service from '../services/authService'
 import { useAuth } from '../hooks/useAuth'
@@ -24,7 +24,10 @@ function Controls() {
 
 function setup(strict = false) {
   const content = <MemoryRouter initialEntries={['/dashboard']}><AuthProvider>
-    <Controls /><Routes><Route element={<ProtectedRoute />}><Route path="/dashboard" element={<h1>Conteúdo protegido</h1>} /></Route>
+    <Controls /><Routes><Route element={<ProtectedRoute />}><Route element={<div><Link to="/mapa">Abrir mapa</Link><input aria-label="Busca do painel" /><Outlet /></div>}>
+      <Route path="/dashboard" element={<h1>Conteúdo protegido</h1>} />
+      <Route path="/mapa" element={<h1>Mapa</h1>} />
+    </Route></Route>
       <Route path="/login" element={<h1>Login</h1>} /></Routes>
   </AuthProvider></MemoryRouter>
   return render(strict ? <StrictMode>{content}</StrictMode> : content)
@@ -32,6 +35,39 @@ function setup(strict = false) {
 
 beforeEach(() => vi.resetAllMocks())
 afterEach(cleanup)
+
+it.each(['navigation', 'focus'])('mantém layout e estado local durante revalidação lenta: %s', async (trigger) => {
+  let resolve!: (user: SessionUser) => void
+  getSession.mockResolvedValueOnce(manager).mockReturnValueOnce(new Promise((done) => { resolve = done }))
+  setup()
+  await screen.findByText('Conteúdo protegido')
+  const search = screen.getByLabelText('Busca do painel')
+  fireEvent.change(search, { target: { value: 'leite' } })
+  if (trigger === 'navigation') fireEvent.click(screen.getByText('Abrir mapa'))
+  else fireEvent.focus(window)
+  await waitFor(() => expect(getSession).toHaveBeenCalledTimes(2))
+  expect(screen.queryByText('Verificando seu acesso')).toBeNull()
+  expect(screen.getByLabelText('Busca do painel')).toBe(search)
+  expect((search as HTMLInputElement).value).toBe('leite')
+  if (trigger === 'navigation') expect(screen.getByText('Mapa')).toBeTruthy()
+  await act(async () => resolve(manager))
+  expect(screen.getByLabelText('Busca do painel')).toBe(search)
+})
+
+it.each(['forbidden', 'network'])('bloqueia painel se a revalidação falhar: %s', async (kind) => {
+  let reject!: (error: Error) => void
+  getSession.mockResolvedValueOnce(manager).mockReturnValueOnce(new Promise((_resolve, fail) => { reject = fail }))
+  setup()
+  await screen.findByText('Conteúdo protegido')
+  fireEvent.click(screen.getByText('Abrir mapa'))
+  expect(screen.getByText('Mapa')).toBeTruthy()
+  getSession.mockResolvedValue(null)
+  await act(async () => reject(kind === 'forbidden' ? new service.AccessDeniedError() : new Error('Sem conexão')))
+  if (kind === 'forbidden') await screen.findByText('Login')
+  else await screen.findByRole('alert')
+  expect(screen.queryByText('Mapa')).toBeNull()
+  expect(screen.queryByLabelText('Busca do painel')).toBeNull()
+})
 
 it('aguarda a confirmação antes de mostrar conteúdo protegido', async () => {
   let resolve!: (user: SessionUser) => void
