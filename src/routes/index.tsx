@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router'
 import ManagerLayout from '../layouts/ManagerLayout'
 import ManagerPlaceholder from '../pages/ManagerPlaceholder'
+import Dashboard from '../pages/Dashboard'
 import LoginRoute from './LoginRoute'
 import ProtectedRoute from './ProtectedRoute'
 import NotFound from '../pages/NotFound'
@@ -17,7 +18,7 @@ function AppRoutes() {
             <Route
               key={path}
               path={path}
-              element={<ManagerPlaceholder title={title} description={description} />}
+              element={path === '/dashboard' ? <Dashboard /> : <ManagerPlaceholder title={title} description={description} />}
             />
           ))}
         </Route>
