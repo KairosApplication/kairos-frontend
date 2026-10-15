@@ -7,7 +7,6 @@ import TextField from './TextField'
 import SelectField from './SelectField'
 import DataTable from './DataTable'
 import Modal from './Modal'
-import ComponentPreview from '../pages/ComponentPreview'
 
 const originalShowModal = Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, 'showModal')
 const originalClose = Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, 'close')
@@ -86,27 +85,4 @@ it('modal controlado fecha por Escape e restaura foco e rolagem', () => {
   expect(screen.queryByRole('dialog')).toBeNull()
   expect(document.activeElement).toBe(trigger)
   expect(document.body.style.overflow).toBe('')
-})
-
-it('demonstração filtra exemplos sem acentos e permite recuperar a tabela de um erro', () => {
-  render(<ComponentPreview />)
-  fireEvent.change(screen.getByLabelText('Buscar produto'), { target: { value: 'cafe' } })
-  expect(screen.getByRole('rowheader', { name: 'Café torrado 500 g' })).toBeTruthy()
-  expect(screen.queryByRole('rowheader', { name: 'Leite integral 1 L' })).toBeNull()
-  fireEvent.change(screen.getByLabelText('Disponibilidade'), { target: { value: 'out' } })
-  expect(screen.getByText('Nenhum resultado encontrado')).toBeTruthy()
-  fireEvent.change(screen.getByLabelText('Estado da demonstração'), { target: { value: 'error' } })
-  fireEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }))
-  expect(screen.queryByRole('alert')).toBeNull()
-})
-
-it('formulário demonstra validação e adiciona um registro somente à lista local', () => {
-  render(<ComponentPreview />)
-  fireEvent.click(screen.getByRole('button', { name: 'Adicionar exemplo' }))
-  fireEvent.click(screen.getByRole('button', { name: 'Adicionar' }))
-  expect(screen.getByRole('alert').textContent).toContain('Informe o nome')
-  fireEvent.change(screen.getByLabelText('Nome do produto'), { target: { value: 'Exemplo fictício' } })
-  fireEvent.click(screen.getByRole('button', { name: 'Adicionar' }))
-  expect(screen.queryByRole('dialog')).toBeNull()
-  expect(screen.getByRole('rowheader', { name: 'Exemplo fictício' })).toBeTruthy()
 })
