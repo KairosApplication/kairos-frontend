@@ -7,6 +7,51 @@ const before = { headerName: 'X-CSRF-TOKEN', token: 'before-login' }
 const after = { headerName: 'X-CSRF-TOKEN', token: 'after-login' }
 const manager = { email: 'manager@example.test', roles: ['MANAGER'] }
 
+describe('restauração e encerramento da sessão', () => {
+  it('restaura gerente com cookies e reconhece sessão expirada', async () => {
+    const { getSession } = await import('./authService')
+    fetchMock.mockResolvedValueOnce(Response.json(manager))
+    await expect(getSession()).resolves.toEqual(manager)
+    expect(fetchMock).toHaveBeenLastCalledWith(expect.stringContaining('/me'), expect.objectContaining({ credentials: 'include', cache: 'no-store' }))
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 401 }))
+    await expect(getSession()).resolves.toBeNull()
+  })
+  it.each([403, 'EMPLOYEE', 'CUSTOMER'])('nega acesso para %s', async (value) => {
+    const { getSession, AccessDeniedError } = await import('./authService')
+    fetchMock.mockResolvedValueOnce(typeof value === 'number' ? new Response(null, { status: value }) : Response.json({ email: manager.email, roles: [value] }))
+    await expect(getSession()).rejects.toBeInstanceOf(AccessDeniedError)
+  })
+  it('não confunde falha do servidor, payload ou rede com sessão anônima', async () => {
+    const { getSession } = await import('./authService')
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 500 }))
+    await expect(getSession()).rejects.toThrow('verificar sua sessão')
+    fetchMock.mockResolvedValueOnce(Response.json({ roles: 'MANAGER' }))
+    await expect(getSession()).rejects.toThrow('resposta inesperada')
+    fetchMock.mockRejectedValueOnce(new TypeError('offline'))
+    await expect(getSession()).rejects.toThrow('conectar')
+  })
+  it('propaga cancelamento sem remover o timeout', async () => {
+    const { getSession } = await import('./authService')
+    const controller = new AbortController()
+    fetchMock.mockResolvedValueOnce(Response.json(manager))
+    await getSession(controller.signal)
+    const signal = fetchMock.mock.calls[0][1]?.signal
+    controller.abort()
+    expect(signal?.aborted).toBe(true)
+  })
+  it.each([204, 401])('encerra sessão com CSRF novo: %s', async (status) => {
+    const { logout } = await import('./authService')
+    fetchMock.mockResolvedValueOnce(Response.json(before)).mockResolvedValueOnce(new Response(null, { status }))
+    await expect(logout()).resolves.toBeUndefined()
+    expect(fetchMock).toHaveBeenLastCalledWith(expect.stringContaining('/logout'), expect.objectContaining({ method: 'POST', headers: { 'X-CSRF-TOKEN': before.token } }))
+  })
+  it.each([403, 500])('não declara logout bem sucedido com status %s', async (status) => {
+    const { logout } = await import('./authService')
+    fetchMock.mockResolvedValueOnce(Response.json(before)).mockResolvedValueOnce(new Response(null, { status }))
+    await expect(logout()).rejects.toThrow()
+  })
+})
+
 function successfulLogin(user: unknown = manager) {
   fetchMock
     .mockResolvedValueOnce(Response.json(before))

@@ -177,6 +177,13 @@
   font-size: 12px;
 }
 
+.manager-header__profile strong {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .manager-header__profile small {
   margin-top: 4px;
   font-size: 10px;

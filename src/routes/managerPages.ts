@@ -1,5 +1,5 @@
 export const managerPages = [
-  { path: '/dashboard', title: 'Dashboard', description: 'Olá, Ana. Veja o que está acontecendo na sua loja hoje.' },
+  { path: '/dashboard', title: 'Dashboard', description: 'Veja o que está acontecendo na sua loja hoje.' },
   { path: '/mapa', title: 'Mapa da Loja', description: 'Acompanhe a situação das gôndolas e encontre prioridades por setor.' },
   { path: '/gondolas', title: 'Gestão de Gôndolas', description: 'Organize os espaços da loja e os produtos de cada gôndola.' },
   { path: '/produtos', title: 'Produtos', description: 'Gerencie o catálogo, os preços e a disponibilidade dos produtos.' },
