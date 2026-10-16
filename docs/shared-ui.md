@@ -12,7 +12,7 @@
 | `Feedback` | Mensagem de carregamento, vazio ou erro, com alternativa textual e nova tentativa opcional. O skeleton é estático, sem animação. |
 | `Modal` | `dialog` nativo controlado por `open` e `onClose`, título e descrição associados, Escape, foco inicial e restauração de foco/rolagem. Tab/Shift+Tab circulam entre os controles visíveis; o navegador torna o restante da página inerte. |
 
-O `Button` já é reutilizado na tentativa de verificar sessão. Os demais componentes estão preparados para o Dashboard e os próximos módulos. A revisão visual será feita nas telas que os utilizarem.
+O `Button` é reutilizado na tentativa de verificar sessão. O Dashboard utiliza `Button`, `Card`, `Badge` e `Modal`; os demais componentes estão preparados para os próximos módulos. A revisão visual é feita nas telas que os utilizam.
 
 ```tsx
 import Button from '../components/Button'
