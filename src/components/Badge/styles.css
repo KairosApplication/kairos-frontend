@@ -1,0 +1,29 @@
+.ui-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.ui-badge--success {
+  background: #e5f5eb;
+  color: #086344;
+}
+
+.ui-badge--warning {
+  background: var(--color-accent-soft);
+  color: #805300;
+}
+
+.ui-badge--danger {
+  background: #fcecea;
+  color: #b42318;
+}

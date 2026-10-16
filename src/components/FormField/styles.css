@@ -1,0 +1,74 @@
+.ui-field {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ui-field label {
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.ui-field__control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+.ui-field__control > span {
+  display: flex;
+  padding-left: 12px;
+  color: var(--color-text-muted);
+}
+
+.ui-field input, .ui-field select {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 14px;
+}
+
+.ui-field__control input {
+  border: 0;
+}
+
+.ui-field input::placeholder {
+  color: var(--color-text-muted);
+  opacity: 1;
+}
+
+.ui-field input:disabled, .ui-field select:disabled {
+  background: var(--color-surface-muted);
+  cursor: not-allowed;
+}
+
+.ui-field [aria-invalid='true'] {
+  border: 1px solid var(--color-danger);
+}
+
+.ui-field__hint, .ui-field__error {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.ui-field__hint {
+  color: var(--color-text-muted);
+}
+
+.ui-field__error {
+  color: #b42318;
+}

@@ -1,3 +1,4 @@
+import Button from '../Button'
 import './styles.css'
 
 type SessionStatusProps = {
@@ -12,7 +13,7 @@ function SessionStatus({ error, onRetry }: SessionStatusProps) {
         <h1 id="session-title">{error ? 'Não foi possível verificar seu acesso' : 'Verificando seu acesso'}</h1>
         {error ? <>
           <p className="route-card__description" role="alert">{error}</p>
-          <button className="route-card__link session-status__retry" type="button" onClick={() => void onRetry()}>Tentar novamente</button>
+          <Button className="session-status__retry" onClick={() => void onRetry()}>Tentar novamente</Button>
         </> : <p className="route-card__description" role="status">Aguarde enquanto confirmamos sua sessão.</p>}
       </section>
     </main>
