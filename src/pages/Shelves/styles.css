@@ -1,0 +1,36 @@
+.shelves { min-width: 0; padding: 32px 32px 10px; }
+.shelves__stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 28px; }
+.shelves__stat { padding: 20px; }
+.shelves__stat .ui-card__header { position: relative; padding-right: 36px; margin-bottom: 4px; }
+.shelves__stat .ui-card__header h2 { color: var(--color-text-muted); font-size: 13px; font-weight: 400; }
+.shelves__stat .ui-card__actions { position: absolute; top: -4px; right: 0; }
+.shelves__stat-icon { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; }
+.shelves__stat-icon svg { width: 18px; height: 18px; }
+.shelves__stat-icon--success { background: #e5f5eb; color: var(--color-primary); }
+.shelves__stat-icon--danger { background: #fcecea; color: var(--color-primary); }
+.shelves__stat-icon--warning { background: var(--color-accent-soft); color: #805300; }
+.shelves__stat-value { margin: 8px 0; font-size: 30px; font-weight: 600; line-height: 1.3; }
+.shelves__stat-detail { margin: 0; color: var(--color-text-muted); font-size: 11px; line-height: 1.6; }
+.shelves__filters { display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); align-items: end; gap: 16px; margin-bottom: 28px; }
+.shelves__filters .ui-field label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.shelves__filters input, .shelves__filters select { font-size: 12px; }
+.shelves__select { position: relative; min-width: 0; }
+.shelves__select select { appearance: none; padding-right: 40px; }
+.shelves__select > svg { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+.shelves__map-link { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 10px 16px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); color: var(--color-text); font-size: 13px; font-weight: 600; text-decoration: none; }
+.shelves__catalog .ui-card__header { margin-bottom: 10px; }
+.shelves__catalog caption { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.shelves__catalog .ui-table { min-width: 660px; font-size: 12px; }
+.shelves__catalog .ui-table thead th { font-size: 11px; padding: 12px; }
+.shelves__catalog .ui-table tbody th, .shelves__catalog .ui-table tbody td { padding: 10px 12px; }
+.shelves__catalog .ui-badge { min-width: 120px; font-size: 10px; }
+.shelves__map-action { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 6px; color: var(--color-primary); }
+.shelves__map-action:hover { background: var(--color-surface-muted); }
+.shelves__table-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; margin-top: 14px; }
+.shelves__table-footer > p { margin: 0; color: var(--color-text-muted); font-size: 11px; line-height: 1.6; }
+.shelves__pagination { display: flex; align-items: center; gap: 12px; }
+.shelves__pagination .ui-button { min-height: 44px; padding: 10px 24px; font-size: 13px; }
+.shelves__pagination > span { display: flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; border-radius: 8px; background: var(--color-primary); color: white; font-size: 13px; font-weight: 600; }
+.shelves__footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; margin-top: 10px; color: var(--color-text-muted); font-size: 10px; line-height: 1.6; }
+@media (max-width: 1200px) { .shelves__stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .shelves__filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .shelves { padding: 24px 16px; } .shelves__stats { gap: 12px; } .shelves__stat { padding: 16px; } .shelves__stat .ui-card__header { padding-right: 0; padding-top: 36px; } .shelves__stat .ui-card__actions { left: 0; right: auto; top: 0; } .shelves__stat .ui-card__header h2 { font-size: 12px; } .shelves__filters { grid-template-columns: minmax(0, 1fr); } .shelves__pagination { gap: 8px; } .shelves__pagination .ui-button { padding: 10px 12px; } }

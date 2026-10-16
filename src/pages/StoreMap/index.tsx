@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { ArrowRight, ChevronDown, Search } from 'lucide-react'
 import Badge from '../../components/Badge'
 import Button from '../../components/Button'
@@ -22,12 +22,13 @@ function shelfLabel(shelf: MapShelf) {
 }
 
 export default function StoreMap() {
+  const [searchParams] = useSearchParams()
   const [data, setData] = useState<StoreMapData | null>(null)
   const [failed, setFailed] = useState(false)
   const [attempt, setAttempt] = useState(0)
   const [query, setQuery] = useState('')
   const [sectorId, setSectorId] = useState('all')
-  const [selectedId, setSelectedId] = useState('A12')
+  const [selectedId, setSelectedId] = useState(searchParams.get('gondola') ?? 'A12')
   const [detailsOpen, setDetailsOpen] = useState(false)
 
   useEffect(() => {
