@@ -1,6 +1,6 @@
 # Planejamento KAIROS Web — gerente
 
-Atualizado após a integração do Mapa da Loja pela PR #29. As semanas representam a sequência do roadmap; não há datas de início e entrega confirmadas neste documento.
+Atualizado após a integração da listagem de gôndolas pela PR #30. As semanas representam a sequência do roadmap; não há datas de início e entrega confirmadas neste documento.
 
 ## Semana 1 — Fundação e acesso
 
@@ -12,8 +12,8 @@ A autenticação existente foi validada com a versão anterior do backend. A ada
 
 1. **Dashboard visual — entregue:** indicadores, gráfico, prioridades, andamento e CSV, com dados demonstrativos. Os dois escopos previstos originalmente para o Dashboard foram reunidos em uma entrega funcional.
 2. **Mapa da Loja — entregue:** visualização, seleção, busca, setor e detalhes com fonte demonstrativa tipada.
-3. **Gestão de Gôndolas — etapa atual:** tabela, situação, busca, filtros e paginação.
-4. **Operações de gôndolas:** cadastro, edição e exclusão em modal/drawer, conforme contrato disponível; demonstração explicitamente identificada se necessário.
+3. **Gestão de Gôndolas — entregue:** tabela, situação, busca, filtros e paginação.
+4. **Operações de gôndolas — etapa atual:** cadastro, edição e exclusão em modais, com estado demonstrativo temporário compartilhado com o mapa. Integração real depende do contrato confirmado.
 5. **Produtos:** catálogo, categorias, disponibilidade, busca e filtros.
 6. **Operações de produtos:** cadastro/edição e tratamento de estoque conforme contrato confirmado.
 

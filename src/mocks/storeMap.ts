@@ -15,6 +15,7 @@ const shelves: MapShelf[] = sectors.flatMap((sector) =>
     const id = `${sector.id}${suffix}`
     return {
       id, sectorId: sector.id, row: row + 1,
+      location: sector.aisle,
       status: stockouts[id] ? 'stockout' : lowStock.has(id) ? 'low' : 'stocked',
       stockoutCount: stockouts[id] ?? 0,
       responsible: 'João Silva',
