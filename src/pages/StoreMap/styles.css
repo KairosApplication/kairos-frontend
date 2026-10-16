@@ -1,11 +1,14 @@
 .store-map { min-width: 0; padding: 32px 32px 10px; }
 .store-map__filters { display: grid; grid-template-columns: minmax(0, 394px) minmax(0, 192px) 1fr; align-items: end; gap: 16px; margin-bottom: 24px; }
 .store-map__filters .ui-field label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.store-map__sector-filter { position: relative; min-width: 0; }
+.store-map__sector-filter select { appearance: none; padding-right: 42px; }
+.store-map__sector-filter > svg { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); pointer-events: none; }
 .store-map__result { margin: 0; justify-self: end; align-self: center; font-size: 12px; }
 .store-map__result .ui-badge { min-width: 136px; }
 .store-map__layout { display: grid; grid-template-columns: minmax(0, 2.58fr) minmax(0, 1fr); gap: 24px; align-items: stretch; }
 .store-map__overview .ui-card__header { margin-bottom: 8px; }
-.store-map__floor { padding: 20px 34px 0; border: 1px solid var(--color-border); border-radius: 16px; background: #f7f9f7; }
+.store-map__floor { padding: 20px 34px 16px; border: 1px solid var(--color-border); border-radius: 16px; background: #f7f9f7; }
 .store-map__stockroom { margin: 0 0 18px; color: var(--color-text-muted); font-size: 11px; font-weight: 600; text-align: center; text-transform: uppercase; }
 .store-map__sectors { display: grid; gap: 48px; }
 .store-map__sector { min-width: 0; }
@@ -20,9 +23,9 @@
 .store-map__shelf[aria-pressed='true'] { border-color: currentColor; box-shadow: 0 0 0 1px currentColor; }
 .store-map__shelf:hover { filter: brightness(.96); }
 .store-map__aisle { margin: 14px 0 12px; font-size: 9px; color: var(--color-text-muted); }
-.store-map__checkouts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; padding: 24px 0 18px; border-top: 1px solid var(--color-border); }
+.store-map__checkouts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; padding: 24px 0 10px; border-top: 1px solid var(--color-border); }
 .store-map__checkouts span { display: flex; align-items: center; min-height: 48px; padding: 10px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); color: var(--color-text-muted); font-size: 9px; }
-.store-map__entrance { display: flex; align-items: center; justify-content: flex-end; gap: 76px; margin: 8px 0 0; color: var(--color-primary-strong); font-size: 11px; font-weight: 600; text-transform: uppercase; }
+.store-map__entrance { display: flex; align-items: center; justify-content: flex-end; gap: 76px; margin: 0; color: var(--color-primary-strong); font-size: 11px; font-weight: 600; text-transform: uppercase; }
 .store-map__legend { display: flex; flex-wrap: wrap; gap: 16px; padding: 0; margin: 12px 0 0; list-style: none; }
 .store-map__legend li { flex: 1; }
 .store-map__legend .ui-badge { width: 100%; justify-content: flex-start; font-size: 10px; }
@@ -45,19 +48,19 @@
 .store-map__details div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; }
 .store-map__details dt { font-weight: 600; }
 .store-map__details dd { margin: 0; }
-@media (max-width: 1200px) { .store-map__layout { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 16px; } .store-map__floor { padding: 20px 16px 0; } .store-map__sectors { gap: 12px; } }
+@media (max-width: 1200px) { .store-map__layout { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 16px; } .store-map__floor { padding: 20px 16px 16px; } .store-map__sectors { gap: 12px; } }
 @media (max-width: 1050px) { .store-map__layout { grid-template-columns: minmax(0, 1fr); } .store-map__selection { min-height: 0; } .store-map__filters { grid-template-columns: minmax(0, 1fr) minmax(0, 192px); } .store-map__result { grid-column: 1 / -1; justify-self: start; } }
 @media (max-width: 600px) {
   .store-map { padding: 24px 16px; }
   .store-map__filters { grid-template-columns: minmax(0, 1fr); gap: 12px; }
-  .store-map__floor { padding: 16px 8px 0; }
+  .store-map__floor { padding: 16px 8px 16px; }
   .store-map__sectors { gap: 6px; }
   .store-map__sector h3 { font-size: 9px; overflow-wrap: anywhere; }
   .store-map__shelf { padding: 6px 3px; border-radius: 6px; gap: 3px; }
   .store-map__shelf strong { font-size: 10px; }
   .store-map__shelf span { font-size: 8px; overflow-wrap: anywhere; }
   .store-map__aisle { font-size: 8px; }
-  .store-map__checkouts { gap: 6px; padding: 20px 0 14px; }
+  .store-map__checkouts { gap: 6px; padding: 20px 0 6px; }
   .store-map__checkouts span { padding: 5px; font-size: 8px; }
   .store-map__entrance { gap: 24px; font-size: 10px; }
   .store-map__legend { gap: 6px; }

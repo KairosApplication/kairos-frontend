@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
-import { ArrowRight, Search } from 'lucide-react'
+import { ArrowRight, ChevronDown, Search } from 'lucide-react'
 import Badge from '../../components/Badge'
 import Button from '../../components/Button'
 import Card from '../../components/Card'
@@ -59,10 +59,13 @@ export default function StoreMap() {
         <div className="store-map__filters">
           <TextField label="Buscar gôndola ou produto" type="search" placeholder="Buscar gôndola ou produto" icon={<Search size={18} />}
             value={query} onChange={(event) => setQuery(event.target.value)} />
-          <SelectField label="Setor" value={sectorId} onChange={(event) => setSectorId(event.target.value)}>
-            <option value="all">Todos os setores</option>
-            {data.sectors.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-          </SelectField>
+          <div className="store-map__sector-filter">
+            <SelectField label="Setor" value={sectorId} onChange={(event) => setSectorId(event.target.value)}>
+              <option value="all">Todos os setores</option>
+              {data.sectors.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+            </SelectField>
+            <ChevronDown size={18} aria-hidden="true" />
+          </div>
           <p className="store-map__result" role="status"><Badge tone="success">{visible.length} gôndolas{visible.length !== data.shelves.length ? ` de ${data.shelves.length}` : ''}</Badge></p>
         </div>
         {visible.length === 0 ? <Card>
