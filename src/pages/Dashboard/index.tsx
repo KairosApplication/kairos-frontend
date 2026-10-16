@@ -31,7 +31,7 @@ export default function Dashboard() {
 
   return <main className="dashboard">
     <PageHeader title="Dashboard" description="Veja o que está acontecendo na sua loja hoje."
-      actions={<><Badge tone="warning">Dados demonstrativos</Badge><Button icon={<Download />} onClick={exportReport}>Exportar relatório</Button></>} />
+      actions={<Button icon={<Download />} onClick={exportReport}>Exportar relatório</Button>} />
     {exportMessage && <p className={`dashboard__export-message${exportFailed ? ' dashboard__export-message--error' : ''}`} role={exportFailed ? 'alert' : 'status'}>{exportMessage}</p>}
 
     <div className="dashboard__grid">
