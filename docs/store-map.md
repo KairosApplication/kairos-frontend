@@ -13,9 +13,9 @@ A rota protegida `/mapa` usa a captura enviada da seção Web (new), frame `574:
 
 ## Dados e limites
 
-`src/types/storeMap.ts` contém tipos de apresentação, sem definir contratos da API. `src/mocks/storeMap.ts` contém os dados ilustrativos de 25/09/2026. `getStoreMap` é uma fonte temporária tipada em `services/`, sem rede, credenciais, persistência ou escrita no banco.
+`src/types/storeMap.ts` contém tipos de apresentação, sem definir contratos da API. `src/mocks/storeMap.ts` contém os dados ilustrativos de 25/09/2026. `getStoreMap` adapta o estado demonstrativo compartilhado de `shelfCatalogService`: cadastro, renomeação, mudança de setor/localização e exclusão de gôndolas vazias na listagem aparecem no mapa durante a navegação. Recarregar restaura os exemplos. Não há rede, credenciais, persistência ou escrita no banco.
 
-O rodapé identifica os dados demonstrativos. Carregamento, erro com nova tentativa e resultado vazio são tratados pela página. Edição do layout do mapa e criação real de reposições ficam para etapas próprias; o botão de edição do protótipo não é apresentado nesta entrega. A ação de criação foi substituída por navegação explícita à central, sem prometer um cadastro ainda indisponível.
+O rodapé identifica os dados demonstrativos. Carregamento, erro com nova tentativa e resultado vazio são tratados pela página. Gôndolas novas recebem a situação Sem produtos e uma posição livre no setor; a quantidade de posições cresce quando necessário. Edição livre do layout e criação real de reposições ficam pendentes; a ação de criação foi substituída por navegação explícita à central.
 
 ## Verificação
 

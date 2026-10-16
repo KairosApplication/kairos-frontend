@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
-import { Check, ChevronDown, Layers, Map, Package, Search, TriangleAlert } from 'lucide-react'
+import { Check, ChevronDown, Layers, Map, Package, Pencil, Plus, Search, Trash2, TriangleAlert } from 'lucide-react'
 import Badge from '../../components/Badge'
 import Button from '../../components/Button'
 import Card from '../../components/Card'
@@ -9,24 +9,30 @@ import Feedback from '../../components/Feedback'
 import PageHeader from '../../components/PageHeader'
 import SelectField from '../../components/SelectField'
 import TextField from '../../components/TextField'
-import { getShelfCatalog } from '../../services/shelfCatalogService'
-import type { ShelfCatalog, ShelfCatalogItem } from '../../types/shelfCatalog'
+import { createShelf, deleteShelf, getShelfCatalog, updateShelf } from '../../services/shelfCatalogService'
+import type { ShelfCatalog, ShelfCatalogItem, ShelfInput } from '../../types/shelfCatalog'
 import type { ShelfStatus } from '../../types/storeMap'
+import ShelfForm from './ShelfForm'
+import DeleteShelf from './DeleteShelf'
 import './styles.css'
 
-const labels: Record<ShelfStatus, string> = { stocked: 'Abastecida', low: 'Estoque baixo', stockout: 'Ruptura' }
-const tones = { stocked: 'success', low: 'warning', stockout: 'danger' } as const
+const labels: Record<ShelfStatus, string> = { stocked: 'Abastecida', low: 'Estoque baixo', stockout: 'Ruptura', empty: 'Sem produtos' }
+const tones = { stocked: 'success', low: 'warning', stockout: 'danger', empty: 'neutral' } as const
 const pageSize = 6
 const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').trim()
-const columns: TableColumn<ShelfCatalogItem>[] = [
+function shelfColumns(onEdit: (shelf: ShelfCatalogItem) => void, onDelete: (shelf: ShelfCatalogItem) => void): TableColumn<ShelfCatalogItem>[] { return [
   { key: 'id', header: 'Código', render: (shelf) => shelf.id },
   { key: 'sector', header: 'Setor', render: (shelf) => shelf.sectorName },
   { key: 'location', header: 'Localização', render: (shelf) => shelf.location },
   { key: 'products', header: 'Produtos', render: (shelf) => shelf.productCount },
   { key: 'status', header: 'Situação', render: (shelf) => <Badge tone={tones[shelf.status]}>{labels[shelf.status]}</Badge> },
-  { key: 'actions', header: 'Ações', render: (shelf) => <Link className="shelves__map-action" to={`/mapa?gondola=${encodeURIComponent(shelf.id)}`}
-    aria-label={`Ver gôndola ${shelf.id} no mapa`} title={`Ver gôndola ${shelf.id} no mapa`}><Map size={18} aria-hidden="true" /></Link> },
-]
+  { key: 'actions', header: 'Ações', render: (shelf) => <div className="shelves__row-actions">
+    <Link className="shelves__map-action" to={`/mapa?gondola=${encodeURIComponent(shelf.id)}`}
+      aria-label={`Ver gôndola ${shelf.id} no mapa`} title={`Ver gôndola ${shelf.id} no mapa`}><Map size={16} aria-hidden="true" /></Link>
+    <Button variant="ghost" aria-label={`Editar gôndola ${shelf.id}`} title={`Editar gôndola ${shelf.id}`} onClick={() => onEdit(shelf)}><Pencil size={16} aria-hidden="true" /></Button>
+    <Button variant="ghost" aria-label={`Excluir gôndola ${shelf.id}`} title={`Excluir gôndola ${shelf.id}`} onClick={() => onDelete(shelf)}><Trash2 size={16} aria-hidden="true" /></Button>
+  </div> },
+] }
 
 export default function Shelves() {
   const [data, setData] = useState<ShelfCatalog | null>(null)
@@ -36,6 +42,36 @@ export default function Shelves() {
   const [sectorId, setSectorId] = useState('all')
   const [status, setStatus] = useState('all')
   const [page, setPage] = useState(1)
+  const [editor, setEditor] = useState<{ shelf?: ShelfCatalogItem } | null>(null)
+  const [deleting, setDeleting] = useState<ShelfCatalogItem | null>(null)
+  const [message, setMessage] = useState('')
+  const createButton = useRef<HTMLButtonElement>(null)
+  const columns = shelfColumns((shelf) => setEditor({ shelf }), setDeleting)
+
+  function restoreFocusAfterSave() {
+    setTimeout(() => {
+      if (!document.querySelector('dialog[open]')) createButton.current?.focus()
+    }, 0)
+  }
+
+  async function save(input: ShelfInput) {
+    const next = editor?.shelf ? await updateShelf(editor.shelf.id, input) : await createShelf(input)
+    setData(next)
+    clearFilters()
+    setMessage(`Gôndola ${input.code.trim().toUpperCase()} ${editor?.shelf ? 'atualizada' : 'criada'} na demonstração.`)
+    setEditor(null)
+    restoreFocusAfterSave()
+  }
+
+  async function remove() {
+    if (!deleting) return
+    const next = await deleteShelf(deleting.id)
+    setData(next)
+    setPage(currentPage)
+    setMessage(`Gôndola ${deleting.id} excluída da demonstração.`)
+    setDeleting(null)
+    restoreFocusAfterSave()
+  }
 
   useEffect(() => {
     let active = true
@@ -72,7 +108,9 @@ export default function Shelves() {
   ] as const : []
 
   return <main className="shelves">
-    <PageHeader title="Gestão de Gôndolas" description="Organize os espaços da loja e os produtos de cada gôndola." />
+    <PageHeader title="Gestão de Gôndolas" description="Organize os espaços da loja e os produtos de cada gôndola."
+      actions={<Button ref={createButton} icon={<Plus size={18} />} disabled={!data || failed} onClick={() => setEditor({})}>Nova gôndola</Button>} />
+    {message && <p className="shelves__success" role="status">{message}</p>}
     {failed ? <Feedback kind="error" title="Não foi possível carregar as gôndolas." onRetry={() => setAttempt((value) => value + 1)} />
       : !data ? <Feedback kind="loading" title="Carregando gôndolas…" /> : <>
         <div className="shelves__stats">{stats.map((stat) => <Card key={stat.title} className="shelves__stat" title={stat.title}
@@ -103,6 +141,9 @@ export default function Shelves() {
             </nav>}
           </div>
         </Card>
+        {editor && <ShelfForm shelf={editor.shelf} sectors={data.sectors} onClose={() => setEditor(null)} onSave={save} />}
+        {deleting && <DeleteShelf shelf={deleting} onClose={() => setDeleting(null)} onDelete={remove} />}
+        <p className="shelves__demo-note">Alterações demonstrativas compartilhadas com o mapa. Recarregar restaura os exemplos.</p>
         <footer className="shelves__footer"><span>{data.store} · {data.unit}</span><span>Dados demonstrativos · {data.updatedAt}</span></footer>
       </>}
   </main>

@@ -15,7 +15,7 @@ export const shelfCatalogDemo: ShelfCatalog = {
     const shelf = storeMapDemo.shelves.find((item) => item.id === id)!
     const sector = storeMapDemo.sectors.find((item) => item.id === shelf.sectorId)!
     return {
-      id, sectorId: sector.id, sectorName: sector.name, location: sector.aisle,
+      id, sourceId: id, sectorId: sector.id, sectorName: sector.name, location: sector.aisle, mapRow: shelf.row,
       productCount: productCounts[id] ?? 20,
       productNames: shelf.restockingProducts.map((product) => product.name),
       status: shelf.status, stockoutCount: shelf.stockoutCount,

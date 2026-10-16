@@ -1,5 +1,5 @@
 /** Modelo de apresentação do mapa; não representa um contrato da API. */
-export type ShelfStatus = 'stocked' | 'low' | 'stockout'
+export type ShelfStatus = 'stocked' | 'low' | 'stockout' | 'empty'
 
 export type MapSector = { id: string; name: string; aisle: string }
 
@@ -14,6 +14,7 @@ export type MapShelf = {
   id: string
   sectorId: string
   row: number
+  location: string
   status: ShelfStatus
   stockoutCount: number
   responsible: string
