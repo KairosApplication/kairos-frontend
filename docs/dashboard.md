@@ -9,7 +9,7 @@ Os valores são demonstrativos, com data fixa em **25/09/2026**, identificados n
 ## Interações
 
 - **Exportar relatório:** gera CSV UTF-8 com BOM, separador `;`, decimais com vírgula, resumo do dia, reposições e os sete dias do gráfico. O arquivo se chama `kairos-dashboard-demonstrativo-2026-09-25.csv` e identifica a origem demonstrativa.
-- **Ver valores por dia:** expande uma tabela acessível com os valores exatos do gráfico, sem depender de cor ou hover.
+- **Ver valores por dia:** ativar o gráfico abre um modal com a tabela acessível dos valores exatos, sem depender de cor ou hover. O controle pode ser acessado por Tab e ativado por Enter/Espaço.
 - **Prioridades e contadores:** navegam para `/mapa`, `/produtos` ou `/reposicoes`. Esses módulos continuam com suas páginas provisórias; esta entrega não implementa seus filtros ou dados.
 - **Explorar oportunidades:** abre sugestões ilustrativas em modal, com acesso à central de reposição, controle de teclado e restauração de foco.
 

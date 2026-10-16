@@ -35,7 +35,7 @@ function setup() {
 it('exibe a origem demonstrativa, o resumo e o total coerente das tarefas', () => {
   setup()
   expect(screen.getByRole('heading', { name: 'Dashboard', level: 1 })).toBeTruthy()
-  expect(screen.getByText('Dados demonstrativos')).toBeTruthy()
+  expect(screen.getByText(/^Dados demonstrativos ·/)).toBeTruthy()
   expect(screen.getByText(/428 vendas/)).toBeTruthy()
   const tasks = screen.getByRole('region', { name: 'Reposição em movimento' })
   expect(within(tasks).getByText('56 tarefas hoje')).toBeTruthy()
@@ -45,14 +45,16 @@ it('exibe a origem demonstrativa, o resumo e o total coerente das tarefas', () =
 it('fornece alternativa em tabela para todos os pontos do gráfico', () => {
   setup()
   expect(screen.getByRole('img', { name: /Receita demonstrativa dos últimos sete dias/ })).toBeTruthy()
-  const summary = screen.getByText('Ver valores por dia')
-  const details = summary.closest('details')
-  expect(details?.open).toBe(false)
-  fireEvent.click(summary)
-  expect(details?.open).toBe(true)
+  const trigger = screen.getByRole('button', { name: 'Ver valores por dia' })
+  trigger.focus()
+  fireEvent.click(trigger)
+  const dialog = screen.getByRole('dialog', { name: 'Receita por dia' })
   const table = screen.getByRole('table', { name: 'Receita diária demonstrativa' })
   expect(within(table).getAllByRole('row')).toHaveLength(8)
   expect(within(table).getByRole('rowheader', { name: /25\/09\/2026/ })).toBeTruthy()
+  fireEvent.keyDown(dialog, { key: 'Escape' })
+  expect(screen.queryByRole('dialog')).toBeNull()
+  expect(document.activeElement).toBe(trigger)
 })
 
 it('aciona o download local e informa sucesso ou falha sem consultar a API', () => {

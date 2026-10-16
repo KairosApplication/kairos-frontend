@@ -1,6 +1,6 @@
 .dashboard {
   min-width: 0;
-  padding: 32px;
+  padding: 32px 32px 16px;
 }
 
 .dashboard__grid {
@@ -11,6 +11,11 @@
 
 .dashboard .ui-card__header {
   margin-bottom: 18px;
+}
+
+.dashboard .page-header__actions > .ui-button {
+  min-width: 196px;
+  font-size: 14px;
 }
 
 .dashboard-pulse {
@@ -40,8 +45,12 @@
   min-width: 100px;
 }
 
+.dashboard-pulse__heading {
+  align-items: flex-start;
+}
+
 .dashboard-pulse__revenue {
-  margin: 12px 0 6px;
+  margin: 8px 0 6px;
   font-size: clamp(30px, 3.2vw, 44px);
   font-weight: 600;
   line-height: 1.4;
@@ -52,6 +61,7 @@
   flex: 0 0 48px;
   align-self: flex-end;
   color: #c1d8cc;
+  margin-right: 32px;
 }
 
 .dashboard-pulse__detail,
@@ -63,7 +73,7 @@
 }
 
 .dashboard-pulse__growth {
-  margin-top: 20px;
+  margin-top: 13px;
   font-size: 12px;
 }
 
@@ -81,7 +91,7 @@
 }
 
 .dashboard-attention li + li {
-  margin-top: 18px;
+  margin-top: 7px;
 }
 
 .dashboard-attention a,
@@ -165,51 +175,50 @@
   font-size: 12px;
 }
 
-.dashboard-chart__details {
-  margin-top: 10px;
-  color: var(--color-text-muted);
-  font-size: 12px;
-}
-
-.dashboard-chart__details summary {
-  width: fit-content;
-  padding: 6px 0;
-  color: var(--color-primary-strong);
+.dashboard-chart__trigger {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
   cursor: pointer;
 }
 
-.dashboard-chart__details summary:focus-visible {
-  outline: 3px solid var(--color-focus);
-  outline-offset: 3px;
+.dashboard-sales .ui-card__header {
+  margin-bottom: 10px;
 }
 
-.dashboard-chart__details table {
+.dashboard-chart__table {
   width: 100%;
-  margin-top: 12px;
   border-collapse: collapse;
   text-align: left;
+  font-size: 13px;
 }
 
-.dashboard-chart__details caption {
+.dashboard-chart__table caption {
   margin-bottom: 12px;
   text-align: left;
 }
 
-.dashboard-chart__details th,
-.dashboard-chart__details td {
+.dashboard-chart__table th,
+.dashboard-chart__table td {
   padding: 8px 4px;
   border-bottom: 1px solid var(--color-border);
   line-height: 1.6;
 }
 
-.dashboard-chart__details tbody th {
+.dashboard-chart__table tbody th {
   font-weight: 400;
 }
 
 .dashboard-priorities li + li {
-  margin-top: 16px;
-  padding-top: 16px;
+  margin-top: 12px;
+  padding-top: 12px;
   border-top: 1px solid var(--color-border);
+}
+
+.dashboard-priorities .ui-card__header {
+  margin-bottom: 14px;
 }
 
 .dashboard-priorities a {
@@ -233,7 +242,7 @@
   display: flex;
   gap: 4px;
   height: 10px;
-  margin: 24px 0 20px;
+  margin: 18px 0 10px;
 }
 
 .dashboard-restocking__bar span {
@@ -277,7 +286,8 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 14px;
+  gap: 8px;
+  padding: 22px 24px;
 }
 
 .dashboard-opportunity__heading {
@@ -371,6 +381,8 @@
   .dashboard { padding: 24px 16px; }
   .dashboard .page-header__actions { width: 100%; justify-content: space-between; }
   .dashboard-chart__axis { font-size: 22px; }
+  .dashboard-chart__currency { display: none; }
   .dashboard-pulse__revenue { font-size: 34px; }
+  .dashboard-pulse__body > svg { margin-right: 0; }
   .dashboard-pulse__heading .ui-badge { min-width: 76px; }
 }
