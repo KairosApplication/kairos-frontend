@@ -23,6 +23,6 @@ Os testes de componente montam a página em `MemoryRouter`. Na revisão visual a
 
 Verificações: `npm run lint`, `npm run test` e `npm run build`. Os testes verificam a exportação CSV, alternativa textual do gráfico, navegação para módulos, modal e mensagens de download. A revisão no Chrome inclui download real, teclado e larguras de 1440, 1024, 768, 390 e 320px.
 
-## Dependência de PR
+## Integração na main
 
-A implementação utiliza os componentes da PR #26. Enquanto ela estiver aberta, a PR do Dashboard tem como base `feat/shared-ui-components`; depois do merge dos componentes, deve ser atualizada para `main`.
+A implementação utiliza os componentes da PR #26, já incorporados à `main`. A PR #27 foi mergeada em `feat/shared-ui-components` após o merge da #26 e, por isso, não levou o Dashboard à `main`. A correção reaplica os dois commits do Dashboard em uma branch criada da `main`, com a PR direcionada diretamente para `main`.
