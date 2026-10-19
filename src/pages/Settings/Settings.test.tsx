@@ -2,12 +2,15 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, expect, it } from 'vitest'
 import Settings from './index'
+import ThemeProvider from '../../contexts/ThemeProvider'
 import { mockDialogs } from '../../test/dialog'
 mockDialogs()
-afterEach(cleanup)
+afterEach(() => { cleanup(); localStorage.clear(); delete document.documentElement.dataset.theme })
+
+function renderSettings() { return render(<ThemeProvider><Settings /></ThemeProvider>) }
 
 it('altera preferências e salva somente o cenário demonstrativo', async () => {
-  render(<Settings />)
+  renderSettings()
   const name = await screen.findByRole('textbox', { name: 'Nome da loja' })
   fireEvent.change(name, { target: { value: 'Mercado de Teste' } })
   const toggle = screen.getByRole('switch', { name: 'Alertas de ruptura' })
@@ -19,20 +22,21 @@ it('altera preferências e salva somente o cenário demonstrativo', async () => 
   expect(name.getAttribute('value')).toBe('Mercado de Teste')
 })
 
-it('oferece prévia do tema e navegação por seções', async () => {
-  render(<Settings />)
+it('altera o tema global automaticamente e oferece navegação por seções', async () => {
+  renderSettings()
   await screen.findByRole('textbox', { name: 'Nome da loja' })
   fireEvent.click(screen.getByRole('button', { name: 'Escuro' }))
-  expect(screen.getByRole('main').classList.contains('settings--dark')).toBe(true)
-  expect(screen.getByText('Prévia do tema nesta página.')).toBeTruthy()
+  expect(document.documentElement.dataset.theme).toBe('dark')
+  expect(localStorage.getItem('kairos.theme')).toBe('dark')
   fireEvent.click(screen.getByRole('button', { name: 'Claro' }))
-  expect(screen.getByRole('main').classList.contains('settings--dark')).toBe(false)
+  expect(document.documentElement.dataset.theme).toBe('light')
+  expect(localStorage.getItem('kairos.theme')).toBe('light')
   fireEvent.click(screen.getByRole('button', { name: 'Notificações' }))
   expect(screen.getByRole('button', { name: 'Notificações' }).getAttribute('aria-current')).toBe('location')
 })
 
 it('consulta acessos fictícios e encerra somente o exemplo, preservando a sessão real', async () => {
-  render(<Settings />)
+  renderSettings()
   const trigger = await screen.findByRole('button', { name: 'Gerenciar acessos' })
   trigger.focus(); fireEvent.click(trigger)
   expect(screen.getByRole('dialog', { name: 'Gerenciar acessos' })).toBeTruthy()

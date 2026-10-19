@@ -1,0 +1,144 @@
+/* Shared dark palette, based on the KAIROS mobile references. */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-background: #102019;
+  --color-surface: #1c2d27;
+  --color-surface-muted: #243c30;
+  --color-border: #385246;
+  --color-text: #ecf3ef;
+  --color-text-muted: #b4c6bc;
+  --color-primary: #9ddac1;
+  --color-primary-strong: #9ddac1;
+  --color-accent-soft: #3d3420;
+  --color-success: #9ddac1;
+  --color-warning: #f5cf70;
+  --color-danger: #ffaaa2;
+  --color-focus: #9ddac1;
+  --color-brand-surface: #204b3b;
+  --color-success-surface: #243f32;
+  --color-danger-surface: #432b29;
+  --shadow-card: 0 8px 24px rgb(0 0 0 / 12%);
+}
+
+:root[data-theme='dark'] :is(.sidebar, .login-brand) {
+  background: linear-gradient(160deg, #163e2e, #204b3b);
+}
+
+:root[data-theme='dark'] .ui-card--brand {
+  background: var(--color-brand-surface);
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
+/* Selected navigation stays green, matching the mobile appearance. */
+:root[data-theme='dark'] :is(
+  .sidebar__link--active, .sidebar__link--active:hover,
+  .settings__sidebar nav button[aria-current],
+  .products__categories nav button[aria-pressed='true'],
+  .visual-tabs button[aria-pressed='true'],
+  .products__pagination > span, .shelves__pagination > span
+) {
+  background: var(--color-success-surface);
+  color: var(--color-primary);
+}
+
+:root[data-theme='dark'] :is(
+  .manager-header__avatar, .sidebar__avatar, .login-access__badge,
+  .shelves__stat-icon--success, .employee-card__avatar, .profile__avatar,
+  .sales-customers__avatar, .sales-customers__stats .ui-card__actions,
+  .kairos-message--user, .kairos-assistant__conversations nav button[aria-pressed='true'],
+  .settings__theme button[aria-pressed='true']
+) {
+  background: var(--color-success-surface);
+  color: var(--color-primary);
+}
+
+:root[data-theme='dark'] :is(
+  .ui-badge--success, .visual-message, .shelves__success, .store-map__shelf--stocked
+) {
+  background: var(--color-success-surface);
+  color: var(--color-success);
+}
+
+:root[data-theme='dark'] :is(
+  .ui-badge--warning, .store-map__shelf--low, .shelves__stat-icon--warning
+) {
+  background: var(--color-accent-soft);
+  color: var(--color-warning);
+}
+
+:root[data-theme='dark'] :is(
+  .ui-badge--danger, .store-map__shelf--stockout, .shelves__stat-icon--danger,
+  .ui-feedback--error, .settings__error, .profile__error, .login-form__error
+) {
+  background: var(--color-danger-surface);
+  border-color: var(--color-border);
+  color: var(--color-danger);
+}
+
+:root[data-theme='dark'] :is(
+  .ui-field__error, .shelves__form-error, .login-form__field-error,
+  .kairos-assistant__error, .products__summary dl > div:nth-child(5) dd
+) {
+  color: var(--color-danger);
+}
+
+:root[data-theme='dark'] :is(
+  .settings__unit > svg, .settings__unit p, .products__attention > svg,
+  .products__summary dl > div:nth-child(4) dd, .dashboard-opportunity > p,
+  .kairos-message li::before, .insights__moves li:first-child a > span
+) {
+  color: var(--color-warning);
+}
+
+:root[data-theme='dark'] :is(
+  .settings__security, .products__categories, .store-map__floor,
+  .restocking__column, .kairos-message--assistant, .employees__shift,
+  .login-brand__card
+) {
+  background: var(--color-surface);
+}
+
+:root[data-theme='dark'] .restock-task {
+  background: var(--color-surface-muted);
+}
+
+/* Yellow actions need dark text even when the page text becomes light. */
+:root[data-theme='dark'] :is(
+  .ui-button--primary, .login-form__submit, .login-brand__card-icon,
+  .route-card__link, .kairos-message__action, .store-map__central
+) {
+  color: #102019;
+}
+
+:root[data-theme='dark'] .route-card__link:hover {
+  background: #f3b735;
+}
+
+:root[data-theme='dark'] .ui-button--danger {
+  background: #b73530;
+}
+
+:root[data-theme='dark'] .dashboard-chart__area {
+  fill: var(--color-success-surface);
+}
+
+:root[data-theme='dark'] .dashboard-chart__point {
+  fill: var(--color-surface);
+}
+
+:root[data-theme='dark'] :is(.insights__track > span, .insights__column > span) {
+  background: var(--color-success);
+}
+
+:root[data-theme='dark'] :is(.insights__shares, .insights__chart) .insights__bar--warm {
+  background: var(--color-accent);
+}
+
+:root[data-theme='dark'] .demo-toggle[aria-checked='true'] .demo-toggle__track {
+  background: #9ddac1;
+}
+
+:root[data-theme='dark'] .demo-toggle[aria-checked='true'] .demo-toggle__track > span {
+  background: #163e2e;
+}

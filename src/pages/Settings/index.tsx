@@ -9,6 +9,7 @@ import Modal from '../../components/Modal'
 import TextField from '../../components/TextField'
 import VisualPage from '../../components/VisualPage'
 import useDemoData from '../../hooks/useDemoData'
+import useTheme from '../../hooks/useTheme'
 import { getSettingsView } from '../../services/settingsViewService'
 import type { SettingsView } from '../../types/settingsView'
 import './styles.css'
@@ -19,7 +20,7 @@ export default function Settings() {
   const { data, loading, error, retry } = useDemoData(getSettingsView)
   const [draft, setDraft] = useState<Partial<SettingsView>>({})
   const [section, setSection] = useState('overview')
-  const [theme, setTheme] = useState('light')
+  const { theme, setTheme } = useTheme()
   const [message, setMessage] = useState('')
   const [formError, setFormError] = useState('')
   const [accessOpen, setAccessOpen] = useState(false)
@@ -36,10 +37,10 @@ export default function Settings() {
     event.preventDefault()
     if (!settings?.store.trim() || !settings.unit.trim()) { setFormError('Informe o nome da loja e a unidade.'); return }
     setDraft({ ...settings, store: settings.store.trim(), unit: settings.unit.trim(), email: settings.email.trim() })
-    setFormError(''); setMessage('Preferências salvas somente nesta demonstração. Recarregar restaura os exemplos; a loja real não foi alterada.')
+    setFormError(''); setMessage('Dados da loja e notificações salvos somente nesta demonstração; a loja real não foi alterada. O tema é salvo automaticamente neste navegador.')
   }
 
-  return <VisualPage title="Configurações" description="Personalize a loja, as notificações e as preferências do sistema." className={`settings${theme === 'dark' ? ' settings--dark' : ''}`}
+  return <VisualPage title="Configurações" description="Personalize a loja, as notificações e as preferências do sistema." className="settings"
     actions={<Button type="submit" form="settings-form" disabled={!settings} icon={<Check />}>Salvar alterações</Button>}>
     {message && <p className="visual-message" role="status">{message}</p>}{formError && <p role="alert" className="settings__error">{formError}</p>}
     {error ? <Feedback kind="error" title="Não foi possível carregar as configurações." onRetry={retry} /> : loading || !settings ? <Feedback kind="loading" title="Carregando configurações…" /> : <div className="settings__layout" id="settings-overview" tabIndex={-1}>
@@ -56,7 +57,7 @@ export default function Settings() {
           <div className="settings__preference-row"><label htmlFor="settings-language">Idioma</label><div className="settings__select"><select id="settings-language" defaultValue="pt-BR"><option value="pt-BR">Português (Brasil)</option></select><ChevronDown size={18} aria-hidden="true" /></div></div>
           <div className="settings__preference-row"><label htmlFor="settings-timezone">Fuso horário</label><div className="settings__select"><select id="settings-timezone" value={settings.timezone} onChange={(event) => setDraft({ ...draft, timezone: event.target.value })}><option value="America/Sao_Paulo">Brasília (GMT−3)</option><option value="America/Manaus">Manaus (GMT−4)</option></select><ChevronDown size={18} aria-hidden="true" /></div></div>
           <div className="settings__preference-row"><span>Tema</span><div className="settings__theme"><button type="button" aria-pressed={theme === 'light'} onClick={() => setTheme('light')}>Claro</button><button type="button" aria-pressed={theme === 'dark'} onClick={() => setTheme('dark')}>Escuro</button></div></div>
-          {theme === 'dark' && <p className="settings__theme-note">Prévia do tema nesta página.</p>}
+          <p className="settings__theme-note">O tema é aplicado em todo o site e salvo automaticamente neste navegador.</p>
         </Card>
         <Card id="settings-notifications" tabIndex={-1} title="Notificações" className="settings__notifications"><div><div><h3>Alertas de ruptura</h3><p>Quando faltar produto na gôndola.</p></div><DemoToggle label="Alertas de ruptura" checked={settings.ruptureAlerts} onChange={(ruptureAlerts) => setDraft({ ...draft, ruptureAlerts })} /></div>
           <div><div><h3>Resumo por e-mail</h3><p>Indicadores ao final do expediente.</p></div><DemoToggle label="Resumo por e-mail" checked={settings.emailSummary} onChange={(emailSummary) => setDraft({ ...draft, emailSummary })} /></div>

@@ -38,12 +38,6 @@
 .settings__sessions p { color: var(--color-text-muted); font-size: 12px; line-height: 1.7; }
 .settings__error { padding: 12px; background: #fcecea; color: #b42318; font-size: 13px; }
 .settings .visual-page__footer { margin-top: 25px; }
-.settings--dark { --color-surface: #213e32; --color-background: #29493b; --color-border: #537460; --color-text: #f3f6f3; --color-text-muted: #c5d9cc; --color-primary-strong: #c5e9d4; background: #17382e; color: var(--color-text); }
-.settings--dark .settings__security { background: #29493b; }
-.settings--dark .settings__security > svg { color: #c5e9d4; }
-.settings--dark select option { background: #213e32; color: #f3f6f3; }
-.settings--dark .settings__theme button[aria-pressed='true'] { background: #355f4a; }
-.settings--dark .ui-button--primary, .settings--dark .ui-card--warm { color: #17382e; }
 @media (max-width: 1250px) { .settings__layout { grid-template-columns: 180px minmax(0, 1fr); } .settings__cards { grid-template-columns: minmax(0, 1fr); } .settings__security { flex-wrap: wrap; } .settings__theme button { min-width: 90px; } }
 @media (max-width: 750px) { .settings__layout { grid-template-columns: minmax(0, 1fr); } .settings__sidebar nav { grid-template-columns: repeat(2, minmax(0, 1fr)); } .settings__unit { min-height: 0; margin-top: 24px; } .settings__security .ui-button { min-width: 0; width: 100%; } }
 @media (max-width: 600px) { .settings__preference-row { flex-wrap: wrap; padding: 12px 0; gap: 8px; } .settings__select { max-width: 100%; } .settings__sidebar nav button { padding: 10px; font-size: 12px; } .settings__security { padding: 20px; } }
