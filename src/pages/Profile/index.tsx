@@ -9,7 +9,7 @@ import Modal from '../../components/Modal'
 import TextField from '../../components/TextField'
 import VisualPage from '../../components/VisualPage'
 import useDemoData from '../../hooks/useDemoData'
-import { getProfileView } from '../../services/profileViewService'
+import { createProfilePhoto, getProfileView } from '../../services/profileViewService'
 import type { ProfileView } from '../../types/profileView'
 import './styles.css'
 
@@ -22,8 +22,10 @@ export default function Profile() {
   const [avatar, setAvatar] = useState('')
   const fileInput = useRef<HTMLInputElement>(null)
   const nameInput = useRef<HTMLInputElement>(null)
+  const photoAttempt = useRef(0)
   const profile = data ? { ...data, ...draft } : null
   useEffect(() => () => { if (avatar) URL.revokeObjectURL(avatar) }, [avatar])
+  useEffect(() => () => { photoAttempt.current++ }, [])
 
   function save(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -32,14 +34,17 @@ export default function Profile() {
     setDraft({ ...profile, name: profile.name.trim(), email: profile.email.trim() })
     setFormError(''); setMessage('Perfil demonstrativo atualizado. Sua conta real não foi alterada; recarregar restaura os exemplos.')
   }
-  function photo(event: ChangeEvent<HTMLInputElement>) {
+  async function photo(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
     if (!file) return
+    const attempt = ++photoAttempt.current
     if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type) || file.size > 2 * 1024 * 1024) {
       setFormError('Escolha uma imagem PNG, JPEG ou WebP de até 2 MB.'); event.target.value = ''; return
     }
-    try { setAvatar(URL.createObjectURL(file)); setFormError(''); setMessage('Foto em prévia local. Nenhum arquivo foi enviado à loja.') }
-    catch { setFormError('Não foi possível abrir a imagem. Tente outro arquivo.') }
+    try {
+      const png = await createProfilePhoto(file)
+      if (attempt === photoAttempt.current) { setAvatar(URL.createObjectURL(png)); setFormError(''); setMessage('Foto em prévia local. Nenhum arquivo foi enviado à loja.') }
+    } catch { if (attempt === photoAttempt.current) setFormError('Não foi possível abrir a imagem. Tente outro arquivo.') }
     event.target.value = ''
   }
 
