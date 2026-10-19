@@ -46,10 +46,23 @@ export default function Shelves() {
   const [deleting, setDeleting] = useState<ShelfCatalogItem | null>(null)
   const [message, setMessage] = useState('')
   const createButton = useRef<HTMLButtonElement>(null)
-  const columns = shelfColumns((shelf) => setEditor({ shelf }), setDeleting)
+  const focusTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const columns = shelfColumns(openEditor, openDelete)
+
+  function cancelPendingFocus() {
+    if (focusTimer.current !== null) clearTimeout(focusTimer.current)
+    focusTimer.current = null
+  }
+  function openEditor(shelf?: ShelfCatalogItem) { cancelPendingFocus(); setEditor({ shelf }) }
+  function openDelete(shelf: ShelfCatalogItem) { cancelPendingFocus(); setDeleting(shelf) }
+  useEffect(() => () => {
+    if (focusTimer.current !== null) clearTimeout(focusTimer.current)
+  }, [])
 
   function restoreFocusAfterSave() {
-    setTimeout(() => {
+    cancelPendingFocus()
+    focusTimer.current = setTimeout(() => {
+      focusTimer.current = null
       if (!document.querySelector('dialog[open]')) createButton.current?.focus()
     }, 0)
   }
@@ -109,7 +122,7 @@ export default function Shelves() {
 
   return <main className="shelves">
     <PageHeader title="Gestão de Gôndolas" description="Organize os espaços da loja e os produtos de cada gôndola."
-      actions={<Button ref={createButton} icon={<Plus size={18} />} disabled={!data || failed} onClick={() => setEditor({})}>Nova gôndola</Button>} />
+      actions={<Button ref={createButton} icon={<Plus size={18} />} disabled={!data || failed} onClick={() => openEditor()}>Nova gôndola</Button>} />
     {message && <p className="shelves__success" role="status">{message}</p>}
     {failed ? <Feedback kind="error" title="Não foi possível carregar as gôndolas." onRetry={() => setAttempt((value) => value + 1)} />
       : !data ? <Feedback kind="loading" title="Carregando gôndolas…" /> : <>
