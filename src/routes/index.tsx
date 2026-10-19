@@ -5,6 +5,7 @@ import ManagerPlaceholder from '../pages/ManagerPlaceholder'
 import Dashboard from '../pages/Dashboard'
 import StoreMap from '../pages/StoreMap'
 import Shelves from '../pages/Shelves'
+import Products from '../pages/Products'
 import LoginRoute from './LoginRoute'
 import ProtectedRoute from './ProtectedRoute'
 import NotFound from '../pages/NotFound'
@@ -14,6 +15,7 @@ const implementedPages: Partial<Record<string, ComponentType>> = {
   '/dashboard': Dashboard,
   '/mapa': StoreMap,
   '/gondolas': Shelves,
+  '/produtos': Products,
 }
 
 function AppRoutes() {
