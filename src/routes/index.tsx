@@ -10,12 +10,14 @@ import LoginRoute from './LoginRoute'
 import ProtectedRoute from './ProtectedRoute'
 import NotFound from '../pages/NotFound'
 import { managerPages } from './managerPages'
+import { visualPages } from './visualPages'
 
 const implementedPages: Partial<Record<string, ComponentType>> = {
   '/dashboard': Dashboard,
   '/mapa': StoreMap,
   '/gondolas': Shelves,
   '/produtos': Products,
+  ...visualPages,
 }
 
 function AppRoutes() {
