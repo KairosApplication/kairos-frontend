@@ -80,3 +80,15 @@ export default defineConfig([
 ])
 
 ```
+
+<!-- docs-bot:start -->
+## Documentação
+
+- [Dashboard visual](docs/dashboard.md)
+- [Login do gerente](docs/login-api.md)
+- [Catálogo de Produtos](docs/product-catalog.md)
+- [Planejamento KAIROS Web — gerente](docs/roadmap.md)
+- [Componentes compartilhados](docs/shared-ui.md)
+- [Gestão de Gôndolas](docs/shelf-management.md)
+- [Mapa da Loja](docs/store-map.md)
+<!-- docs-bot:end -->
