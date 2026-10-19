@@ -1,0 +1,5 @@
+.demo-toggle { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 52px; width: 52px; min-height: 44px; padding: 4px; border: 0; border-radius: 8px; background: transparent; cursor: pointer; }
+.demo-toggle__track { display: block; position: relative; width: 44px; height: 24px; border-radius: 24px; background: #819b8e; }
+.demo-toggle__track > span { display: block; position: absolute; left: 2px; top: 2px; width: 20px; height: 20px; border-radius: 50%; background: white; }
+.demo-toggle[aria-checked='true'] .demo-toggle__track { background: #00845f; }
+.demo-toggle[aria-checked='true'] .demo-toggle__track > span { transform: translateX(20px); }
