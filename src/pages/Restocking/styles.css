@@ -1,0 +1,22 @@
+.restocking__toolbar > .ui-field { max-width: 390px; }
+.restocking__toolbar > .ui-badge { margin-left: auto; min-width: 170px; }
+.restocking__date { min-width: 150px; width: 150px; }
+.restocking__board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.restocking__column { display: flex; flex-direction: column; min-width: 0; min-height: 650px; padding: 20px 18px 16px; border-radius: 20px; background: #e9f0ea; }
+.restocking__column > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 28px; }
+.restocking__column h2 { margin: 0; font-size: 16px; font-weight: 600; }
+.restocking__column > header .ui-badge { font-size: 11px; }
+.restocking__tasks { display: grid; gap: 18px; }
+.restock-task { display: flex; flex-direction: column; gap: 8px; min-width: 0; min-height: 156px; width: 100%; padding: 12px 16px; border: 0; border-radius: 14px; background: white; color: var(--color-text); text-align: left; cursor: pointer; }
+.restock-task__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.restock-task small { color: var(--color-text-muted); font-size: 9px; }
+.restock-task__top .ui-badge { min-width: 100px; font-size: 9px; }
+.restock-task > strong { font-size: 14px; font-weight: 600; }
+.restock-task__product { color: var(--color-text-muted); font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
+.restock-task__person { display: flex; align-items: center; gap: 8px; margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--color-border); font-size: 10px; color: var(--color-primary); }
+.restock-task__person svg { flex-shrink: 0; }
+.restocking__column > .ui-button { justify-content: flex-start; margin-top: auto; padding: 20px 0 0; font-size: 11px; }
+.restocking__all { display: grid; gap: 16px; margin: 0; padding: 0; list-style: none; }
+.restocking__all li { display: grid; gap: 8px; padding-bottom: 16px; border-bottom: 1px solid var(--color-border); font-size: 13px; }
+@media (max-width: 1100px) { .restocking__toolbar > .ui-field { max-width: none; } .restocking__toolbar > .ui-badge { margin-left: 0; } .restocking__column { padding: 16px 12px; } .restock-task__top { flex-wrap: wrap; } }
+@media (max-width: 700px) { .restocking__board { grid-template-columns: minmax(0, 1fr); } .restocking__column { min-height: 280px; } .restocking__column > .ui-button { margin-top: 16px; } .restocking__date { width: 100%; } }
