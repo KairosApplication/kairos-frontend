@@ -86,8 +86,13 @@
 :root[data-theme='dark'] :is(
   .settings__unit > svg, .settings__unit p, .products__attention > svg,
   .products__summary dl > div:nth-child(4) dd, .dashboard-opportunity > p,
-  .kairos-message li::before, .insights__moves li:first-child a > span
+  .insights__moves li:first-child a > span
 ) {
+  color: var(--color-warning);
+}
+
+/* Pseudo-elements cannot be matched inside :is(). */
+:root[data-theme='dark'] .kairos-message li::before {
   color: var(--color-warning);
 }
 
