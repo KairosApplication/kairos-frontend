@@ -7,7 +7,7 @@ type TextFieldProps = ComponentProps<'input'> & FieldDetails & { icon?: ReactNod
 export default function TextField({ label, hint, error, icon, id, ...props }: TextFieldProps) {
   const generatedId = useId()
   const inputId = id ?? generatedId
-  return <FormField id={inputId} label={label} hint={hint} error={error}>
+  return <FormField id={inputId} label={label} hint={hint} error={error} required={props.required}>
     <div className="ui-field__control">
       {icon && <span aria-hidden="true">{icon}</span>}
       <input {...props} id={inputId} aria-invalid={error ? true : props['aria-invalid']}

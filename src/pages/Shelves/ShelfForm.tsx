@@ -52,14 +52,15 @@ export default function ShelfForm({ shelf, sectors, onClose, onSave }: ShelfForm
     actions={<><Button variant="secondary" disabled={saving} onClick={onClose}>Cancelar</Button>
       <Button type="submit" form={formId} loading={saving} loadingLabel="Salvando…">{shelf ? 'Salvar alterações' : 'Criar gôndola'}</Button></>}>
     <form id={formId} ref={form} onSubmit={submit} noValidate className="shelves__form">
-      <TextField ref={code} label="Código" value={input.code} maxLength={12} autoComplete="off" disabled={saving}
+      <p className="shelves__form-note">Campos com * são obrigatórios.</p>
+      <TextField ref={code} label="Código" required value={input.code} maxLength={12} autoComplete="off" disabled={saving}
         hint="Até 12 letras, números ou hífen. O código deve ser único." error={errors.code}
         onChange={(event) => setInput({ ...input, code: event.target.value })} />
-      <div className="shelves__form-select"><SelectField label="Setor" value={input.sectorId} disabled={saving} error={errors.sectorId}
+      <div className="shelves__form-select"><SelectField label="Setor" required value={input.sectorId} disabled={saving} error={errors.sectorId}
         onChange={(event) => setInput({ ...input, sectorId: event.target.value })}>
         {sectors.map((sector) => <option key={sector.id} value={sector.id}>{sector.name}</option>)}
       </SelectField><ChevronDown size={18} aria-hidden="true" /></div>
-      <TextField label="Localização" value={input.location} maxLength={80} autoComplete="off" disabled={saving}
+      <TextField label="Localização" required value={input.location} maxLength={80} autoComplete="off" disabled={saving}
         placeholder="Ex.: Corredor 1, próximo à entrada" error={errors.location}
         onChange={(event) => setInput({ ...input, location: event.target.value })} />
       <p className="shelves__form-note">{shelf ? 'A edição preserva os produtos vinculados e a situação de estoque.' : 'A nova gôndola começa sem produtos vinculados.'}</p>
