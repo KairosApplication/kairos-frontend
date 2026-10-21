@@ -70,7 +70,7 @@ it('leva a gôndola escolhida para o mapa já selecionada', async () => {
   await setup()
   fireEvent.click(screen.getByRole('link', { name: 'Ver gôndola C31 no mapa' }))
   expect(await screen.findByRole('region', { name: 'Gôndola C31' })).toBeTruthy()
-  expect(screen.getByRole('button', { name: 'Gôndola C31, Estoque baixo' }).getAttribute('aria-pressed')).toBe('true')
+  expect(screen.getByRole('button', { name: 'Gôndola C31 Estoque baixo' }).getAttribute('aria-pressed')).toBe('true')
 })
 
 it('trata carregamento e falha da fonte com nova tentativa', async () => {
