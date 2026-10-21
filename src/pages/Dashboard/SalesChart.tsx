@@ -13,8 +13,6 @@ export default function SalesChart({ points }: { points: readonly SalesPoint[] }
   }))
   const line = coordinates.map((point) => `${point.x},${point.y}`).join(' ')
   return <figure className="dashboard-chart">
-    <button className="dashboard-chart__trigger" type="button" aria-label="Ver valores por dia" aria-haspopup="dialog"
-      title="Ver valores por dia" onClick={() => setValuesOpen(true)}>
     <svg className="dashboard-chart__plot" viewBox="0 0 640 176" role="img" aria-labelledby={`${id}-title ${id}-description`}>
       <title id={`${id}-title`}>Receita demonstrativa dos últimos sete dias</title>
       <desc id={`${id}-description`}>De sábado a sexta-feira. Ative o gráfico para consultar os valores exatos em uma tabela.</desc>
@@ -32,7 +30,8 @@ export default function SalesChart({ points }: { points: readonly SalesPoint[] }
         <text x={point.x} y="170" textAnchor="middle" className="dashboard-chart__axis">{point.label}</text>
       </g>)}
     </svg>
-    </button>
+    <figcaption><button className="dashboard-chart__values" type="button" aria-haspopup="dialog"
+      onClick={() => setValuesOpen(true)}>Ver valores por dia</button></figcaption>
     <Modal open={valuesOpen} onClose={() => setValuesOpen(false)} title="Receita por dia"
       description="Valores demonstrativos do gráfico, de sábado a sexta-feira."
       actions={<Button variant="secondary" onClick={() => setValuesOpen(false)}>Fechar</Button>}>

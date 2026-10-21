@@ -12,6 +12,7 @@ import TextField from '../../components/TextField'
 import { getStoreMap } from '../../services/storeMapService'
 import type { MapShelf, ShelfStatus, StoreMapData } from '../../types/storeMap'
 import './styles.css'
+import '../../styles/accessible-names.css'
 
 const statusLabels: Record<ShelfStatus, string> = { stocked: 'Abastecida', low: 'Estoque baixo', stockout: 'Reposição urgente', empty: 'Sem produtos' }
 const statusTones = { stocked: 'success', low: 'warning', stockout: 'danger', empty: 'neutral' } as const
@@ -83,9 +84,9 @@ export default function StoreMap() {
                     <div className="store-map__shelves" style={{ gridTemplateRows: `repeat(${Math.max(6, ...data.shelves.filter((shelf) => shelf.sectorId === item.id).map((shelf) => shelf.row))}, 50px)` }}>
                       {visible.filter((shelf) => shelf.sectorId === item.id).map((shelf) => <button key={shelf.id} type="button"
                         className={`store-map__shelf store-map__shelf--${shelf.status}`} style={{ gridRow: shelf.row }}
-                        aria-pressed={selected?.id === shelf.id} aria-label={`Gôndola ${shelf.id}, ${shelfLabel(shelf)}`} title={`Gôndola ${shelf.id}`}
+                        aria-pressed={selected?.id === shelf.id} title={`Gôndola ${shelf.id}`}
                         aria-controls="store-map-selection" onClick={() => setSelectedId(shelf.id)}>
-                        <strong>{shelf.id}</strong><span>{shelfLabel(shelf)}</span>
+                        <span className="a11y-hidden-label">Gôndola</span>{' '}<strong>{shelf.id}</strong>{' '}<span>{shelfLabel(shelf)}</span>
                       </button>)}
                     </div>
                     <p className="store-map__aisle">{item.aisle}</p>

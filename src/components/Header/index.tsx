@@ -4,6 +4,7 @@ import { Link, useLocation } from 'react-router'
 import { managerPages } from '../../routes/managerPages'
 import { useSessionIdentity } from '../../hooks/useSessionIdentity'
 import './styles.css'
+import '../../styles/accessible-names.css'
 
 function normalize(value: string) {
   return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR')
@@ -112,10 +113,11 @@ function Header() {
           )}
         </div>
 
-        <Link className="manager-header__profile" to="/perfil" aria-label={`Meu perfil — ${email}`}>
+        <Link className="manager-header__profile" to="/perfil">
+          <span className="a11y-hidden-label">Meu perfil:</span>{' '}
           <span className="manager-header__avatar" aria-hidden="true">{initials}</span>
           <span className="manager-header__profile-details">
-            <strong title={email}>{email}</strong>
+            <strong title={email}>{email}</strong>{' '}
             <small>Gerente</small>
           </span>
         </Link>
