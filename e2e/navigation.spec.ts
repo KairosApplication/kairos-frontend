@@ -1,0 +1,72 @@
+import { test, expect } from '@playwright/test'
+import { mockSession } from './support'
+
+test.beforeEach(async ({ page }) => { await mockSession(page) })
+
+test('@a11y identifica rotas, permite pular o menu e mantém foco nos filtros', async ({ page }) => {
+  await page.goto('/dashboard')
+  await expect(page).toHaveTitle('Dashboard | KAIROS')
+  await expect(page.getByRole('heading', { name: 'Dashboard', exact: true })).toBeFocused()
+  await page.getByRole('link', { name: 'Pular para o conteúdo' }).focus()
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('main')).toBeFocused()
+  await page.getByRole('navigation', { name: 'Navegação principal' }).getByRole('link', { name: 'Produtos', exact: true }).focus()
+  await page.keyboard.press('Enter')
+  await expect(page).toHaveTitle('Produtos | KAIROS')
+  await expect(page.getByRole('heading', { name: 'Produtos', exact: true })).toBeFocused()
+  const search = page.getByRole('searchbox', { name: /Buscar nome/ })
+  await search.fill('arroz')
+  await expect(search).toBeFocused()
+  await expect(page.getByRole('rowheader', { name: 'Arroz branco 5 kg' })).toBeVisible()
+})
+
+test('@a11y modal contém Tab e Shift+Tab, fecha com Escape e devolve o foco', async ({ page }) => {
+  await page.goto('/funcionarios')
+  const trigger = page.getByRole('button', { name: 'Novo funcionário', exact: true })
+  await trigger.focus(); await page.keyboard.press('Enter')
+  const dialog = page.getByRole('dialog', { name: 'Novo funcionário', exact: true })
+  await expect(dialog.getByRole('heading', { level: 2 })).toBeFocused()
+  await page.keyboard.press('Shift+Tab')
+  await expect(dialog.getByRole('button', { name: 'Adicionar à demonstração' })).toBeFocused()
+  await page.keyboard.press('Tab')
+  await expect(dialog.getByRole('button', { name: 'Fechar janela' })).toBeFocused()
+  await page.keyboard.press('Escape')
+  await expect(dialog).not.toBeVisible()
+  await expect(trigger).toBeFocused()
+})
+
+test('@a11y busca e notificações do Header funcionam pelo teclado', async ({ page }) => {
+  await page.goto('/dashboard')
+  const search = page.getByRole('searchbox', { name: 'Buscar páginas no KAIROS' })
+  await search.fill('mapa')
+  await page.keyboard.press('Tab')
+  await expect(page.locator('#header-search-results').getByRole('link', { name: 'Mapa da Loja' })).toBeFocused()
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('heading', { name: 'Mapa da Loja', exact: true })).toBeFocused()
+  const notifications = page.getByRole('button', { name: 'Notificações', exact: true })
+  await notifications.focus(); await page.keyboard.press('Space')
+  await expect(notifications).toHaveAttribute('aria-expanded', 'true')
+  await page.keyboard.press('Escape')
+  await expect(notifications).toBeFocused()
+  await expect(notifications).toHaveAttribute('aria-expanded', 'false')
+})
+
+test('@a11y tabela permite rolagem horizontal pelo teclado no mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 844 })
+  await page.goto('/produtos')
+  const table = page.getByRole('region', { name: 'Catálogo de produtos — resultados filtrados' })
+  await table.focus()
+  await page.keyboard.press('ArrowRight')
+  await expect.poll(() => table.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0)
+  await expect(table).toBeFocused()
+})
+
+test('@a11y Login e 404 têm título e foco próprios', async ({ page }) => {
+  await mockSession(page, false)
+  await page.goto('/login')
+  await expect(page).toHaveTitle('Login | KAIROS')
+  await expect(page.getByRole('heading', { level: 1 })).toBeFocused()
+  await page.goto('/rota-invalida')
+  await expect(page).toHaveTitle('Página não encontrada | KAIROS')
+  await expect(page.getByRole('heading', { name: 'Página não encontrada' })).toBeFocused()
+})
