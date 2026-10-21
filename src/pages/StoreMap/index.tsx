@@ -80,7 +80,7 @@ export default function StoreMap() {
                 <div className="store-map__sectors" style={{ gridTemplateColumns: `repeat(${visibleSectors.length}, minmax(0, 1fr))` }}>
                   {visibleSectors.map((item) => <section className="store-map__sector" key={item.id} aria-label={`${item.name} · ${item.aisle}`}>
                     <h3>{item.name}</h3>
-                    <div className="store-map__shelves" style={{ gridTemplateRows: `repeat(${Math.max(6, ...data.shelves.filter((shelf) => shelf.sectorId === item.id).map((shelf) => shelf.row))}, 50px)` }}>
+                    <div className="store-map__shelves" style={{ gridTemplateRows: `repeat(${Math.max(6, ...data.shelves.filter((shelf) => shelf.sectorId === item.id).map((shelf) => shelf.row))}, minmax(50px, auto))` }}>
                       {visible.filter((shelf) => shelf.sectorId === item.id).map((shelf) => <button key={shelf.id} type="button"
                         className={`store-map__shelf store-map__shelf--${shelf.status}`} style={{ gridRow: shelf.row }}
                         aria-pressed={selected?.id === shelf.id} aria-label={`Gôndola ${shelf.id}, ${shelfLabel(shelf)}`} title={`Gôndola ${shelf.id}`}

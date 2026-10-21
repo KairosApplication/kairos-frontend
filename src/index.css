@@ -3,6 +3,7 @@
 @import '@fontsource/montserrat/latin-600.css';
 @import '@fontsource/montserrat/latin-700.css';
 @import './styles/theme.css';
+@import './styles/accessible-controls.css';
 
 :root {
   color-scheme: light;
@@ -21,7 +22,7 @@
   --color-border: #e1e9e3;
   --color-text: #17382e;
   --color-text-muted: #526c61;
-  --color-success: #00885e;
+  --color-success: #00845f;
   --color-warning: #9b6500;
   --color-danger: #d73832;
   --color-focus: #146c52;
