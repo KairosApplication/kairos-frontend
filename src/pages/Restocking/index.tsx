@@ -14,6 +14,7 @@ import StatusMessage from '../../components/StatusMessage'
 import { getRestockingView } from '../../services/restockingViewService'
 import type { RestockingTask } from '../../types/restockingView'
 import './styles.css'
+import '../../styles/accessible-names.css'
 
 const columns = [{ id: 'pending', title: 'Pendentes', tone: 'warning' }, { id: 'active', title: 'Em andamento', tone: 'success' }, { id: 'done', title: 'Concluídas', tone: 'success' }] as const
 const people = ['João Silva', 'Mariana Lima', 'Pedro Santos']
@@ -48,10 +49,11 @@ export default function Restocking() {
   }
 
   function taskCard(task: RestockingTask) {
-    return <button type="button" className="restock-task" key={task.id} onClick={() => setSelected(task)} aria-label={`Ver reposição ${task.id}, gôndola ${task.shelf}`}>
-      <span className="restock-task__top"><small>{task.id}</small><Badge tone={task.status === 'done' ? 'success' : task.urgent ? 'danger' : 'warning'}>{task.status === 'done' ? 'Concluída' : task.urgent ? 'Urgente' : 'Normal'}</Badge></span>
-      <strong>Gôndola {task.shelf}</strong><span className="restock-task__product">{task.product} · {task.quantity} unidades</span>
-      <span className="restock-task__person">{task.responsible ? <UserRound size={16} /> : <UsersRound size={16} />}{task.responsible || 'Sem responsável'}</span><small>{task.time}</small>
+    return <button type="button" className="restock-task" key={task.id} onClick={() => setSelected(task)}>
+      <span className="a11y-hidden-label">Ver reposição</span>{' '}
+      <span className="restock-task__top"><small>{task.id}</small>{' '}<Badge tone={task.status === 'done' ? 'success' : task.urgent ? 'danger' : 'warning'}>{task.status === 'done' ? 'Concluída' : task.urgent ? 'Urgente' : 'Normal'}</Badge></span>{' '}
+      <strong>Gôndola {task.shelf}</strong>{' '}<span className="restock-task__product">{task.product} · {task.quantity} unidades</span>{' '}
+      <span className="restock-task__person">{task.responsible ? <UserRound size={16} aria-hidden="true" /> : <UsersRound size={16} aria-hidden="true" />}{task.responsible || 'Sem responsável'}</span>{' '}<small>{task.time}</small>
     </button>
   }
 
