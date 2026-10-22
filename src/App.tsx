@@ -1,8 +1,9 @@
 import AppRoutes from './routes'
+import RouteAccessibility from './components/RouteAccessibility'
 import './App.css'
 
 function App() {
-  return <AppRoutes />
+  return <><RouteAccessibility /><AppRoutes /></>
 }
 
 export default App

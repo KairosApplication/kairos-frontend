@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, expect, it } from 'vitest'
 import Settings from './index'
 import ThemeProvider from '../../contexts/ThemeProvider'
@@ -42,7 +42,7 @@ it('consulta acessos fict√≠cios e encerra somente o exemplo, preservando a sess√
   expect(screen.getByRole('dialog', { name: 'Gerenciar acessos' })).toBeTruthy()
   fireEvent.click(screen.getByRole('button', { name: 'Encerrar exemplo' }))
   expect(screen.queryByText('Celular de exemplo')).toBeNull()
-  expect(screen.getByRole('status').textContent).toContain('Nenhum acesso real foi encerrado')
+  expect(within(screen.getByRole('dialog')).getByRole('status').textContent).toContain('Nenhum acesso real foi encerrado')
   fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
   expect(document.activeElement).toBe(trigger)
 })

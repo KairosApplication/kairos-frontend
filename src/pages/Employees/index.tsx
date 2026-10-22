@@ -9,6 +9,9 @@ import SelectField from '../../components/SelectField'
 import TextField from '../../components/TextField'
 import VisualPage from '../../components/VisualPage'
 import useDemoData from '../../hooks/useDemoData'
+import useFormValidation from '../../hooks/useFormValidation'
+import useStatusMessage from '../../hooks/useStatusMessage'
+import StatusMessage from '../../components/StatusMessage'
 import { getEmployeesView } from '../../services/employeesViewService'
 import type { EmployeeView } from '../../types/employeesView'
 import './styles.css'
@@ -27,8 +30,8 @@ export default function Employees() {
   const [page, setPage] = useState(1)
   const [selected, setSelected] = useState<EmployeeView | null>(null)
   const [creating, setCreating] = useState(false)
-  const [message, setMessage] = useState('')
-  const [formError, setFormError] = useState('')
+  const [message, setMessage] = useStatusMessage()
+  const { formRef, errors, validate, reject, clear, reset } = useFormValidation()
   const people = [...created, ...(data ?? [])]
   const filtered = people.filter((person) => normalize(`${person.name} ${person.email}`).includes(normalize(search)) && (role === 'all' || person.role === role) && (status === 'all' || person.status === status))
   const currentPage = Math.min(page, Math.max(1, Math.ceil(filtered.length / 6)))
@@ -39,20 +42,20 @@ export default function Employees() {
 
   function create(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (!validate(event.currentTarget)) return
     const form = new FormData(event.currentTarget)
     const name = String(form.get('name') ?? '').trim()
     const email = String(form.get('email') ?? '').trim().toLowerCase()
-    if (!name) { setFormError('Informe o nome.'); return }
-    if (people.some((person) => person.email.toLowerCase() === email)) { setFormError('Este e-mail já está na demonstração.'); return }
+    if (people.some((person) => person.email.toLowerCase() === email)) { reject({ email: 'Este e-mail já está na demonstração.' }); return }
     const newRole = String(form.get('role')) as EmployeeView['role']
     setCreated((previous) => [{ id: `demo-${previous.length + 1}`, name, email, role: newRole, shift: 'Manhã', status: 'off', location: 'Sem posto atribuído' }, ...previous])
-    setCreating(false); setPage(1); setRole('all'); setStatus('all'); setSearch(''); setFormError('')
+    setCreating(false); setPage(1); setRole('all'); setStatus('all'); setSearch(''); reset()
     setMessage('Funcionário adicionado à demonstração. Nenhuma conta ou acesso real foi criado.')
   }
 
   return <VisualPage title="Funcionários" description="Gerencie os acessos e acompanhe a equipe da loja." className="employees"
-    actions={<Button icon={<Plus />} onClick={() => { setFormError(''); setCreating(true) }}>Novo funcionário</Button>}>
-    {message && <p role="status" className="visual-message">{message}</p>}
+    actions={<Button icon={<Plus />} onClick={() => { reset(); setCreating(true) }}>Novo funcionário</Button>}>
+    <StatusMessage notice={message} />
     {error ? <Feedback kind="error" title="Não foi possível carregar a equipe." onRetry={retry} /> : loading ? <Feedback kind="loading" title="Carregando equipe…" /> : <div className="employees__layout">
       <Card tone="brand" className="employees__summary"><p className="employees__eyebrow">Equipe · Unidade Centro</p><strong className="employees__total">{active}</strong><p>pessoas em atividade</p><small>de {people.length} funcionários cadastrados</small>
         <div className="employees__progress" role="img" aria-label={`${active} de ${people.length} funcionários em atividade`}><span style={{ width: `${people.length ? active / people.length * 100 : 0}%` }} /></div>
@@ -77,7 +80,7 @@ export default function Employees() {
       {selected && <dl className="visual-details"><div><dt>E-mail</dt><dd>{selected.email}</dd></div><div><dt>Função</dt><dd>{selected.role}</dd></div><div><dt>Turno</dt><dd>{selected.shift}</dd></div><div><dt>Status</dt><dd>{statuses[selected.status]}</dd></div><div><dt>Posto</dt><dd>{selected.location}</dd></div></dl>}
     </Modal>
     <Modal open={creating} onClose={() => setCreating(false)} title="Novo funcionário" description="Simulação temporária, sem criar usuário, senha ou acesso real." actions={<><Button variant="secondary" onClick={() => setCreating(false)}>Cancelar</Button><Button type="submit" form="employee-create">Adicionar à demonstração</Button></>}>
-      <form id="employee-create" onSubmit={create} className="visual-form"><TextField name="name" label="Nome completo" required maxLength={80} /><TextField name="email" label="E-mail" type="email" required maxLength={120} /><SelectField name="role" label="Função" defaultValue="Repositor">{['Repositor', 'Caixa', 'Vendedor'].map((item) => <option key={item}>{item}</option>)}</SelectField>{formError && <p role="alert">{formError}</p>}</form>
+      <form id="employee-create" ref={formRef} onSubmit={create} noValidate className="visual-form"><p className="visual-note">Campos com * são obrigatórios.</p><TextField name="name" error={errors.name} label="Nome completo" required maxLength={80} onChange={() => clear('name')} /><TextField name="email" error={errors.email} label="E-mail" type="email" required maxLength={120} onChange={() => clear('email')} /><SelectField name="role" label="Função" defaultValue="Repositor">{['Repositor', 'Caixa', 'Vendedor'].map((item) => <option key={item}>{item}</option>)}</SelectField></form>
     </Modal>
   </VisualPage>
 }

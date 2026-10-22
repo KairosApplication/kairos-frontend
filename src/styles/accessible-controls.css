@@ -1,0 +1,23 @@
+/* Control boundaries are distinct from decorative card and table dividers. */
+:root { --color-control-border: #738b7d; }
+:root[data-theme='dark'] { --color-control-border: #728e7f; }
+
+:root .ui-field__control,
+:root .ui-field input,
+:root .ui-field select,
+:root .login-form__input,
+:root .ui-button--secondary {
+  border-color: var(--color-control-border);
+}
+
+:root .ui-field__control input { border: 0; }
+:root .ui-field [aria-invalid='true'],
+:root .ui-field__control:has([aria-invalid='true']) { border-color: var(--color-danger); }
+
+:root .settings__theme button { border: 2px solid transparent; }
+:root .settings__theme button[aria-pressed='true'] { border-color: var(--color-primary-strong); }
+
+.demo-toggle:not([aria-checked='true']) .demo-toggle__track { background: #6a8577; }
+
+/* Text spacing and text enlargement must not crop fixed-height map rows. */
+.store-map__shelf { min-height: 50px; }
