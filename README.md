@@ -1,7 +1,7 @@
 # KAIROS — Web do gerente
 
 Aplicação em React, Vite e TypeScript. Para executar: `npm ci` e `npm run dev`.
-O Login em `/login` usa autenticação por sessão da API Spring Boot. Veja [configuração e limites do Login](docs/login-api.md) para configurar a URL, CORS e a conta de gerente.
+O Login em `/login` usa JWT com cookies HttpOnly da versão local da API Spring Boot. Veja [contrato, configuração e limites do Login](docs/login-api.md) para configurar a URL, CORS e a conta de gerente.
 
 Verificações: `npm run test`, `npm run lint` e `npm run build`.
 

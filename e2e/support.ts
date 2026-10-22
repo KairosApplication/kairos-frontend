@@ -22,7 +22,10 @@ export async function mockSession(page: Page, authenticated = true) {
     if (path === '/api/v1/auth/login' && request.method() === 'GET') {
       await route.fulfill({ headers, json: { headerName: 'X-CSRF-TOKEN', token: 'browser-test-csrf' } }); return
     }
-    if (path === '/api/v1/auth/login' && request.method() === 'POST') { signedIn = true; await route.fulfill({ status: 204, headers }); return }
+    if (path === '/api/v1/auth/login' && request.method() === 'POST') {
+      signedIn = true
+      await route.fulfill({ headers, json: { accessToken: 'browser-test-access', tokenType: 'Bearer', expiresIn: 900 } }); return
+    }
     if (path === '/api/v1/auth/logout') { signedIn = false; await route.fulfill({ status: 204, headers }); return }
     await route.fulfill({ status: 503, headers, json: { message: 'No real API is available in this test.' } })
   })
