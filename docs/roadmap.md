@@ -1,12 +1,35 @@
 # Planejamento KAIROS Web — gerente
 
-Atualizado após a integração das operações de gôndolas pela PR #31. As semanas representam a sequência do roadmap; não há datas de início e entrega confirmadas neste documento.
+Atualizado em 22/10/2026 após os merges de cobertura visual, acessibilidade (#42–45) e dependências (#46–50). As semanas abaixo registram a sequência original; a execução atual está na integração final. Não há datas de entrega confirmadas.
+
+## Etapa atual — Integração real e entrega
+
+Referência escolhida: API local JWT no commit `28c73d8`. A main oficial `f27c5b2` tem outro contrato de autenticação; não misturar versões durante a implementação.
+
+1. **PR atual:** autenticação JWT por cookies, cliente HTTP compartilhado, CSRF, tratamento de expiração e testes. Renovação automática pertence ao backend.
+2. Gôndolas e mapa: conectar setores/corredores/gôndolas, reconciliar IDs e posições e integrar operações reais.
+3. Produtos e estoque: consulta, categorias e operações de catálogo conforme DTOs e vínculos reais.
+4. Reposição e funcionários: PRs dedicadas para tarefas, responsáveis, equipe e operações disponíveis.
+5. Vendas, Dashboard e Insights: mapear dados existentes, períodos e cálculos; registrar os indicadores sem fonte disponível. PRs por módulo.
+6. Perfil, configurações e IA: conectar somente capacidades reais da API. Recursos sem endpoint permanecem explicitamente pendentes.
+7. Validação ponta a ponta com API, teclado/leitor de tela/zoom, README e preparação de deploy. Publicação requer autorização específica.
+
+Cada integração parte da main atualizada, preserva os tipos de apresentação e adiciona validação/adaptação dos DTOs. Dados mockados não são fallback silencioso para erro de API. Operações reais precisam de feedback e testes de falha, permissões e persistência.
+
+### Já entregue
+
+- Fundação, rotas, layout e componentes reutilizáveis; 12 telas (Login e 11 módulos), além de 404.
+- Cobertura visual completa com dados demonstrativos e preferência de tema persistente.
+- Melhorias de teclado, foco, contraste, formulários e anúncios; auditoria automatizada nos dois temas.
+- As validações manuais de acessibilidade continuam pendentes; CI verde não conclui KAIROS-72/76.
+
+## Sequência original por semanas
 
 ## Semana 1 — Fundação e acesso
 
 Entregues: configuração do frontend, template de PR, validações do repositório, rotas e Not Found, layout, Sidebar, Header, Login e autenticação com Context/reducer/rotas protegidas.
 
-A autenticação existente foi validada com a versão anterior do backend. A adaptação ao contrato JWT atualizado continua pendente. Componentes compartilhados foram integrados pela PR #26 e já são usados nas páginas.
+A adaptação JWT está na PR atual. Componentes compartilhados foram integrados pela PR #26 e já são usados nas páginas.
 
 ## Semana 2 — Visão operacional
 
@@ -14,7 +37,7 @@ A autenticação existente foi validada com a versão anterior do backend. A ada
 2. **Mapa da Loja — entregue:** visualização, seleção, busca, setor e detalhes com fonte demonstrativa tipada.
 3. **Gestão de Gôndolas — entregue:** tabela, situação, busca, filtros e paginação.
 4. **Operações de gôndolas — entregue:** cadastro, edição e exclusão em modais, com estado demonstrativo temporário compartilhado com o mapa. Integração real depende do contrato confirmado.
-5. **Produtos — etapa atual:** catálogo, categorias, disponibilidade, busca, filtros e detalhes, com amostra demonstrativa de 12 produtos.
+5. **Produtos — visual entregue:** catálogo, categorias, disponibilidade, busca, filtros e detalhes, com amostra demonstrativa de 12 produtos.
 6. **Operações de produtos:** cadastro/edição e tratamento de estoque conforme contrato confirmado.
 
 ## Semana 3 — Operação e equipe
@@ -39,7 +62,7 @@ A autenticação existente foi validada com a versão anterior do backend. A ada
 
 - Uma branch e uma PR por escopo concreto, sempre com base na `main` atualizada. A dependência deve estar mergeada antes da próxima etapa.
 - Priorizar interfaces independentes da API enquanto os contratos mudam. Dados demonstrativos não contam como integração concluída.
-- Tipos de domínio da PR #25 ainda não aparecem na `main` auditada. Revisar e integrar essa entrega conforme os contratos se estabilizarem; tipos de apresentação são adicionados conforme as páginas precisam.
+- Tipos de apresentação já estão presentes. DTOs e regras reais precisam ser conferidos no contrato da API durante a integração de cada módulo.
 - Acessibilidade, feedback e testes de comportamento acompanham cada entrega.
 - A meta acadêmica original é pelo menos 20 PRs reais mergeadas ao longo de quatro semanas, com planejamento inicial de 24. Números de PR incluem PRs fechadas sem merge e correções; o número #28 não comprova essa meta. Confirmar a contagem e a distribuição com o histórico do GitHub.
 - A separação final das PRs depende do tamanho e da utilidade das entregas; não criar divisões artificiais para atingir a meta.

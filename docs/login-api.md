@@ -1,7 +1,8 @@
 # Login do gerente
 
-Referência: [kairos-springboot PR #30](https://github.com/KairosApplication/kairos-springboot/pull/30), commit `86ea01d`.
-O contrato foi conferido no `SecurityConfig`, `AuthController`, DTOs e testes de integração. O servlet enviado anteriormente não é a API usada por esta entrega.
+Referência escolhida: checkout **local** de `kairos-springboot`, commit `28c73d8`, em 22/10/2026. Contrato conferido em `SecurityConfig`, `AuthController`, `TokenAuthService`, `AuthCookies`, `ApiAuthenticationFilter` e DTOs.
+
+Esta versão usa JWT com cookies HttpOnly e renovação automática no backend. A main oficial consultada (`f27c5b2`) ainda utiliza `JSESSIONID` e não é o contrato desta PR. A versão JWT precisa estar disponível no ambiente que executar este frontend; esta entrega não publica nem altera o backend.
 
 ## Executar localmente
 
@@ -13,12 +14,20 @@ O contrato foi conferido no `SecurityConfig`, `AuthController`, DTOs e testes de
 
 ## Contrato implementado
 
-- `GET /api/v1/auth/login`: `{ headerName, token }` para iniciar a sessão e obter CSRF.
-- `POST /api/v1/auth/login`: formulário URL encoded com `email`, `password` e header `X-CSRF-TOKEN`. Sucesso `204`, credenciais inválidas `401`, CSRF inválido `403`.
-- Após o POST, novo GET de CSRF, pois o backend renova o token no login.
+- `GET /api/v1/auth/login`: `{ headerName, token }` para obter CSRF.
+- `POST /api/v1/auth/login`: formulário URL encoded com `email`, `password` e header `X-CSRF-TOKEN`. Sucesso **200**, corpo `{ accessToken, tokenType: "Bearer", expiresIn }` e cookies HttpOnly `KAIROS_ACCESS`/`KAIROS_REFRESH`. Credenciais inválidas `401`, CSRF inválido `403`.
+- O corpo é validado e descartado. O bearer não vai para storage, contexto, logs ou headers Authorization do navegador.
+- Após o POST, novo GET de CSRF, pois o login invalida o cookie CSRF antigo. `/me` confirma que o navegador manteve os cookies.
 - `GET /api/v1/auth/me`: `{ email, roles }`. Apenas `MANAGER` acessa as rotas do painel. O login retorna à rota conhecida solicitada, preservando filtros, ou segue para `/dashboard`.
 - Para contas sem role de gerente, `POST /api/v1/auth/logout` com o CSRF renovado encerra a sessão. Falhas nesse encerramento são informadas.
-- Todas as chamadas usam `credentials: 'include'` e `cache: 'no-store'`. A sessão é controlada pelo backend via cookie `JSESSIONID`; o frontend não grava senha, cookie ou token em local/session storage.
+- Todas as chamadas usam `credentials: 'include'`, `cache: 'no-store'` e rejeitam redirects inesperados. O frontend não grava senha, cookie ou token em local/session storage.
+- A API renova o access cookie ausente/expirado durante as requisições protegidas, usando o refresh cookie e a sessão no Redis. Um `401` definitivo é tratado como fim do acesso; o frontend não cria ciclos de `/refresh` nem repete escritas automaticamente.
+
+## Cliente HTTP compartilhado
+
+`src/services/apiClient.ts` centraliza `/api/v1`, cookies, cancelamento, timeout de 15 segundos por requisição e JSON não confiável. `apiRequest('/products/list')` devolve a resposta HTTP para o service do módulo validar o status e os dados.
+
+Para POST/PUT/PATCH/DELETE, o cliente obtém CSRF atual antes da escrita, substitui qualquer header antigo e preserva corpo e headers do módulo. Não há cache persistente de CSRF. Se a obtenção falhar ou a operação for cancelada, a escrita não é enviada. Status 401/403/409/5xx não provocam replay de cadastros, exclusões ou senhas.
 
 O service valida os payloads recebidos, trata status HTTP e falhas de rede e limita cada requisição a 15 segundos. As senhas não são alteradas antes do envio; apenas o e-mail é aparado.
 
@@ -40,3 +49,15 @@ O service valida os payloads recebidos, trata status HTTP e falhas de rede e lim
 ## Verificações
 
 Execute `npm run test`, `npm run lint` e `npm run build`. Os testes cobrem o contrato HTTP, reducer, destinos seguros e integração entre provider e rotas: restauração, StrictMode, bloqueio durante carregamento, falha de rede com nova tentativa, expiração, permissões e respostas atrasadas após logout.
+
+`npm run test:browser` inclui login HTTP 200, retorno à rota protegida solicitada, recarga, logout, 401 definitivo e ausência de bearer no storage/headers. O backend desses testes é simulado; a suíte de acessibilidade também usa o contrato JWT atualizado.
+
+### Validação real — 22/10/2026
+
+Executada em Chrome isolado contra a API local `28c73d8`, usando somente a conta fictícia de gerente já cadastrada. Nenhuma senha foi alterada nem dado operacional criado.
+
+- Login real, `/me` e cookies `KAIROS_ACCESS`/`KAIROS_REFRESH` HttpOnly: aprovados.
+- Remoção controlada do access cookie e recarga: a API renovou o acesso pelo refresh cookie, sem pedir novo login.
+- Logout real: retorno ao Login e remoção dos cookies; nenhum storage de autenticação encontrado.
+
+Esse teste não espera a expiração temporal de um JWT nem substitui os testes de segurança do backend, a revisão com leitor de tela ou a integração dos demais módulos.
