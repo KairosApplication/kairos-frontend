@@ -3,6 +3,7 @@
 @import '@fontsource/montserrat/latin-600.css';
 @import '@fontsource/montserrat/latin-700.css';
 @import './styles/theme.css';
+@import './styles/accessible-controls.css';
 
 :root {
   color-scheme: light;
@@ -21,7 +22,7 @@
   --color-border: #e1e9e3;
   --color-text: #17382e;
   --color-text-muted: #526c61;
-  --color-success: #00885e;
+  --color-success: #00845f;
   --color-warning: #9b6500;
   --color-danger: #d73832;
   --color-focus: #146c52;
@@ -78,3 +79,25 @@ textarea {
     outline-offset: 3px;
   }
 }
+
+[tabindex]:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 3px;
+}
+
+.skip-link {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 100;
+  padding: 12px 18px;
+  border: 2px solid var(--color-focus);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 600;
+  transform: translateY(calc(-100% - 24px));
+}
+
+.skip-link:focus { transform: translateY(0); }
