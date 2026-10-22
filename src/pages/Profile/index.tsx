@@ -9,6 +9,9 @@ import Modal from '../../components/Modal'
 import TextField from '../../components/TextField'
 import VisualPage from '../../components/VisualPage'
 import useDemoData from '../../hooks/useDemoData'
+import useFormValidation from '../../hooks/useFormValidation'
+import useStatusMessage from '../../hooks/useStatusMessage'
+import StatusMessage from '../../components/StatusMessage'
 import { createProfilePhoto, getProfileView } from '../../services/profileViewService'
 import type { ProfileView } from '../../types/profileView'
 import './styles.css'
@@ -16,7 +19,8 @@ import './styles.css'
 export default function Profile() {
   const { data, loading, error, retry } = useDemoData(getProfileView)
   const [draft, setDraft] = useState<Partial<ProfileView>>({})
-  const [message, setMessage] = useState('')
+  const [message, setMessage] = useStatusMessage()
+  const { formRef, errors, validate, clear } = useFormValidation()
   const [formError, setFormError] = useState('')
   const [passwordOpen, setPasswordOpen] = useState(false)
   const [avatar, setAvatar] = useState('')
@@ -30,7 +34,7 @@ export default function Profile() {
   function save(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!profile) return
-    if (!profile.name.trim()) { setFormError('Informe seu nome.'); nameInput.current?.focus(); return }
+    if (!validate(event.currentTarget)) { setMessage(''); return }
     setDraft({ ...profile, name: profile.name.trim(), email: profile.email.trim() })
     setFormError(''); setMessage('Perfil demonstrativo atualizado. Sua conta real não foi alterada; recarregar restaura os exemplos.')
   }
@@ -50,7 +54,7 @@ export default function Profile() {
 
   return <VisualPage title="Meu perfil" description="Mantenha suas informações e preferências de acesso atualizadas." className="profile"
     actions={<Button type="submit" form="profile-form" disabled={!profile} icon={<Check />}>Salvar alterações</Button>}>
-    {message && <p role="status" className="visual-message">{message}</p>}{formError && <p role="alert" className="profile__error">{formError}</p>}
+    <StatusMessage notice={message} />{formError && <p role="alert" className="profile__error">{formError}</p>}
     {error ? <Feedback kind="error" title="Não foi possível carregar o perfil." onRetry={retry} /> : loading || !profile ? <Feedback kind="loading" title="Carregando perfil…" /> : <div className="profile__layout">
       <Card className="profile__identity" aria-label="Resumo do perfil demonstrativo"><div className="profile__avatar">{avatar ? <img src={avatar} alt="Prévia da foto de perfil" /> : <span>{profile.name.split(' ').filter(Boolean).map((part) => part[0]).slice(0, 2).join('')}</span>}</div>
         <h2>{profile.name}</h2><p>{profile.role}</p><Badge tone="success">Conta ativa</Badge>
@@ -59,8 +63,8 @@ export default function Profile() {
         <small>Gerente desde {profile.since}</small>
       </Card>
       <div className="profile__content"><Card title="Informações pessoais" description="Dados usados para identificação e contato" className="profile__personal">
-        <form id="profile-form" onSubmit={save} className="visual-form"><TextField ref={nameInput} label="Nome completo" required maxLength={80} autoComplete="name" value={profile.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} />
-          <div className="visual-form-row"><TextField label="E-mail corporativo" type="email" required maxLength={120} autoComplete="email" value={profile.email} onChange={(event) => setDraft({ ...draft, email: event.target.value })} /><TextField label="Telefone" type="tel" autoComplete="tel" maxLength={25} value={profile.phone} onChange={(event) => setDraft({ ...draft, phone: event.target.value })} /></div>
+        <form id="profile-form" ref={formRef} onSubmit={save} noValidate className="visual-form"><p className="visual-note">Campos com * são obrigatórios.</p><TextField ref={nameInput} name="name" error={errors.name} label="Nome completo" required maxLength={80} autoComplete="name" value={profile.name} onChange={(event) => { clear('name'); setDraft({ ...draft, name: event.target.value }) }} />
+          <div className="visual-form-row"><TextField name="email" error={errors.email} label="E-mail corporativo" type="email" required maxLength={120} autoComplete="email" value={profile.email} onChange={(event) => { clear('email'); setDraft({ ...draft, email: event.target.value }) }} /><TextField name="phone" label="Telefone" type="tel" autoComplete="tel" maxLength={25} value={profile.phone} onChange={(event) => setDraft({ ...draft, phone: event.target.value })} /></div>
           <dl className="profile__permissions"><div><dt>Cargo</dt><dd>{profile.role}</dd></div><div><dt>Permissão de acesso</dt><dd>{profile.permission}</dd></div></dl>
         </form>
       </Card>

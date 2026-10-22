@@ -175,12 +175,16 @@
   font-size: 12px;
 }
 
-.dashboard-chart__trigger {
-  display: block;
-  width: 100%;
-  padding: 0;
+.dashboard-chart__values {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 0;
   border: 0;
   background: transparent;
+  color: var(--color-primary-strong);
+  font-size: 12px;
+  text-decoration: underline;
   cursor: pointer;
 }
 

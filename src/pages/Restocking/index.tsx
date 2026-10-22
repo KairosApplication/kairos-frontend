@@ -8,9 +8,13 @@ import SelectField from '../../components/SelectField'
 import TextField from '../../components/TextField'
 import VisualPage from '../../components/VisualPage'
 import useDemoData from '../../hooks/useDemoData'
+import useFormValidation from '../../hooks/useFormValidation'
+import useStatusMessage from '../../hooks/useStatusMessage'
+import StatusMessage from '../../components/StatusMessage'
 import { getRestockingView } from '../../services/restockingViewService'
 import type { RestockingTask } from '../../types/restockingView'
 import './styles.css'
+import '../../styles/accessible-names.css'
 
 const columns = [{ id: 'pending', title: 'Pendentes', tone: 'warning' }, { id: 'active', title: 'Em andamento', tone: 'success' }, { id: 'done', title: 'Concluídas', tone: 'success' }] as const
 const people = ['João Silva', 'Mariana Lima', 'Pedro Santos']
@@ -24,7 +28,8 @@ export default function Restocking() {
   const [creating, setCreating] = useState(false)
   const [selected, setSelected] = useState<RestockingTask | null>(null)
   const [expanded, setExpanded] = useState<string | null>(null)
-  const [message, setMessage] = useState('')
+  const [message, setMessage] = useStatusMessage()
+  const { formRef, errors, validate, clear, reset } = useFormValidation()
   const tasks = [...created, ...(data ?? [])]
   const normalized = search.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
   const filtered = tasks.filter((task) => day === 'today' && (responsible === 'all' || task.responsible === responsible)
@@ -32,6 +37,7 @@ export default function Restocking() {
 
   function create(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (!validate(event.currentTarget)) return
     const fields = new FormData(event.currentTarget)
     const product = String(fields.get('product') ?? '').trim()
     const shelf = String(fields.get('shelf') ?? '').trim().toUpperCase()
@@ -43,16 +49,17 @@ export default function Restocking() {
   }
 
   function taskCard(task: RestockingTask) {
-    return <button type="button" className="restock-task" key={task.id} onClick={() => setSelected(task)} aria-label={`Ver reposição ${task.id}, gôndola ${task.shelf}`}>
-      <span className="restock-task__top"><small>{task.id}</small><Badge tone={task.status === 'done' ? 'success' : task.urgent ? 'danger' : 'warning'}>{task.status === 'done' ? 'Concluída' : task.urgent ? 'Urgente' : 'Normal'}</Badge></span>
-      <strong>Gôndola {task.shelf}</strong><span className="restock-task__product">{task.product} · {task.quantity} unidades</span>
-      <span className="restock-task__person">{task.responsible ? <UserRound size={16} /> : <UsersRound size={16} />}{task.responsible || 'Sem responsável'}</span><small>{task.time}</small>
+    return <button type="button" className="restock-task" key={task.id} onClick={() => setSelected(task)}>
+      <span className="a11y-hidden-label">Ver reposição</span>{' '}
+      <span className="restock-task__top"><small>{task.id}</small>{' '}<Badge tone={task.status === 'done' ? 'success' : task.urgent ? 'danger' : 'warning'}>{task.status === 'done' ? 'Concluída' : task.urgent ? 'Urgente' : 'Normal'}</Badge></span>{' '}
+      <strong>Gôndola {task.shelf}</strong>{' '}<span className="restock-task__product">{task.product} · {task.quantity} unidades</span>{' '}
+      <span className="restock-task__person">{task.responsible ? <UserRound size={16} aria-hidden="true" /> : <UsersRound size={16} aria-hidden="true" />}{task.responsible || 'Sem responsável'}</span>{' '}<small>{task.time}</small>
     </button>
   }
 
   return <VisualPage title="Central de Reposição" description="Da identificação à conclusão: acompanhe cada tarefa da equipe." className="restocking"
-    actions={<Button icon={<Plus />} onClick={() => setCreating(true)}>Criar reposição</Button>}>
-    {message && <p role="status" className="visual-message">{message}</p>}
+    actions={<Button icon={<Plus />} onClick={() => { reset(); setCreating(true) }}>Criar reposição</Button>}>
+    <StatusMessage notice={message} />
     {error ? <Feedback kind="error" title="Não foi possível carregar as reposições." onRetry={retry} /> : loading ? <Feedback kind="loading" title="Carregando reposições…" /> : <>
       <div className="visual-toolbar restocking__toolbar"><TextField label="Buscar produto ou gôndola" placeholder="Buscar produto ou gôndola" icon={<Search size={18} />} type="search" value={search} onChange={(event) => setSearch(event.target.value)} />
         <div className="visual-filter-select"><SelectField label="Responsável" value={responsible} onChange={(event) => setResponsible(event.target.value)}><option value="all">Todos os responsáveis</option><option value="">Sem responsável</option>{people.map((person) => <option key={person}>{person}</option>)}</SelectField><ChevronDown size={18} aria-hidden="true" /></div>
@@ -71,7 +78,7 @@ export default function Restocking() {
     </>}
     <Modal open={creating} onClose={() => setCreating(false)} title="Criar reposição" description="Simulação temporária. Recarregar descarta as tarefas criadas."
       actions={<><Button variant="secondary" onClick={() => setCreating(false)}>Cancelar</Button><Button type="submit" form="restocking-create">Adicionar à demonstração</Button></>}>
-      <form id="restocking-create" onSubmit={create} className="visual-form"><TextField name="product" label="Produto" required maxLength={80} /><TextField name="shelf" label="Gôndola" required maxLength={12} /><TextField name="quantity" label="Quantidade" type="number" min={1} max={9999} step={1} defaultValue={12} required /></form>
+      <form id="restocking-create" ref={formRef} onSubmit={create} noValidate className="visual-form"><p className="visual-note">Campos com * são obrigatórios.</p><TextField name="product" error={errors.product} label="Produto" required maxLength={80} onChange={() => clear('product')} /><TextField name="shelf" error={errors.shelf} label="Gôndola" required maxLength={12} onChange={() => clear('shelf')} /><TextField name="quantity" error={errors.quantity} label="Quantidade" type="number" min={1} max={9999} step={1} defaultValue={12} required onChange={() => clear('quantity')} /></form>
     </Modal>
     <Modal open={Boolean(selected)} onClose={() => setSelected(null)} title={`Reposição ${selected?.id ?? ''}`} description="Dados demonstrativos. Consulta sem alterar a operação da loja." actions={<Button variant="secondary" onClick={() => setSelected(null)}>Fechar</Button>}>
       {selected && <dl className="visual-details"><div><dt>Gôndola</dt><dd>{selected.shelf}</dd></div><div><dt>Produto</dt><dd>{selected.product}</dd></div><div><dt>Quantidade</dt><dd>{selected.quantity}</dd></div><div><dt>Responsável</dt><dd>{selected.responsible || 'Sem responsável'}</dd></div><div><dt>Situação</dt><dd>{columns.find((column) => column.id === selected.status)?.title}</dd></div></dl>}

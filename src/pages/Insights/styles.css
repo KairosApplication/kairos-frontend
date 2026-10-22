@@ -16,7 +16,7 @@
 .insights__moves ol { list-style: none; padding: 0; margin: 0; }
 .insights__moves li + li { border-top: 1px solid var(--color-border); }
 .insights__moves a { display: flex; gap: 24px; padding: 18px 0 24px; color: inherit; text-decoration: none; }
-.insights__moves a > span { color: var(--color-success); font-size: 10px; font-weight: 600; }
+.insights__moves a > span { color: var(--color-primary-strong); font-size: 10px; font-weight: 600; }
 .insights__moves li:first-child a > span { color: #805300; }
 .insights__moves strong { font-size: 14px; font-weight: 600; }
 .insights__moves li p { color: var(--color-text-muted); font-size: 12px; line-height: 1.7; margin: 10px 0 0; }
