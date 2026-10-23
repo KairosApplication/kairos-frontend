@@ -3,9 +3,11 @@ export type LoginCredentials = {
   password: string
 }
 
+export type AuthRole = 'MANAGER' | 'EMPLOYEE' | 'CUSTOMER'
+
 export type SessionUser = {
   email: string
-  roles: ('MANAGER' | 'EMPLOYEE' | 'CUSTOMER')[]
+  roles: AuthRole[]
 }
 
 export type CsrfResponse = {
