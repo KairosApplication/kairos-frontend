@@ -12,3 +12,9 @@ export type CsrfResponse = {
   headerName: string
   token: string
 }
+
+export type TokenResponse = {
+  accessToken: string
+  tokenType: 'Bearer'
+  expiresIn: number
+}
