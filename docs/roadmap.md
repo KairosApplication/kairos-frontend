@@ -6,7 +6,7 @@ Atualizado em 22/10/2026 após os merges de cobertura visual, acessibilidade (#4
 
 Referência escolhida: API local JWT no commit `28c73d8`. A main oficial `f27c5b2` tem outro contrato de autenticação; não misturar versões durante a implementação.
 
-1. **PR atual:** autenticação JWT por cookies, cliente HTTP compartilhado, CSRF, tratamento de expiração e testes. Renovação automática pertence ao backend.
+1. **Autenticação entregue pela PR #51:** JWT por cookies, cliente HTTP compartilhado, CSRF, tratamento de expiração e testes. Renovação automática pertence ao backend. A PR atual remove a identidade fictícia do Perfil e usa os dados disponíveis da sessão; nome e empresa reais dependem da ampliação do contrato de identidade (ver `visual-profile.md`).
 2. Gôndolas e mapa: conectar setores/corredores/gôndolas, reconciliar IDs e posições e integrar operações reais.
 3. Produtos e estoque: consulta, categorias e operações de catálogo conforme DTOs e vínculos reais.
 4. Reposição e funcionários: PRs dedicadas para tarefas, responsáveis, equipe e operações disponíveis.

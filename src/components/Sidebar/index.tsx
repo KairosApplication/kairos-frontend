@@ -50,11 +50,11 @@ function Sidebar() {
 
         <p className="sidebar__caption">Painel do gerente</p>
 
-        <div className="sidebar__store" aria-label="Loja demonstrativa Mercado Aurora, Unidade Centro">
+        <div className="sidebar__store" aria-label="Loja vinculada: não informada">
           <Store size={18} aria-hidden="true" />
           <span>
-            <strong>Mercado Aurora</strong>
-            <small>Unidade Centro</small>
+            <strong>Loja não informada</strong>
+            <small>Vínculo indisponível</small>
           </span>
         </div>
       </div>
@@ -97,7 +97,7 @@ function Sidebar() {
           {state.signingOut ? 'Saindo…' : 'Sair da conta'}
         </button>
         {state.error && <p className="sidebar__error" role="alert">{state.error}</p>}
-        <p className="sidebar__demo">Dados da loja demonstrativos</p>
+        <p className="sidebar__demo">Identificação da conta autenticada</p>
       </div>
     </aside>
   )
