@@ -63,7 +63,7 @@ export default function Products() {
     { key: 'sku', header: 'SKU', render: (product) => product.sku },
     { key: 'price', header: 'Preço', render: (product) => currency.format(product.price) },
     { key: 'units', header: 'Gônd. / dep.', render: (product) => <span aria-label={`${product.shelfUnits} na gôndola, ${product.warehouseUnits} no depósito`}>{product.shelfUnits} / {product.warehouseUnits}</span> },
-    { key: 'location', header: 'Local', render: (product) => data?.shelfCodes[product.sourceShelfId] ?? 'Não vinculada' },
+    { key: 'location', header: 'Local', render: (product) => data?.shelfCodes[product.sourceShelfId] ?? 'Sem vínculo real' },
     { key: 'status', header: 'Status', render: (product) => <Badge tone={tones[productAvailability(product)]}>{labels[productAvailability(product)]}</Badge> },
     { key: 'actions', header: 'Ações', render: (product) => <Button variant="ghost" className="products__details-button"
       aria-label={`Ver detalhes de ${product.name}`} title={`Ver detalhes de ${product.name}`} onClick={() => setSelected(product)}><Eye size={18} aria-hidden="true" /></Button> },

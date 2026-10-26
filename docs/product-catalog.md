@@ -11,7 +11,7 @@ A rota protegida `/produtos` usa a captura enviada do frame Web (new) `574:759`:
 - Paginação de cinco registros, limites nos botões, contador dos resultados filtrados, estado vazio e limpeza dos filtros.
 - Ver pendências limpa os filtros anteriores e reúne produtos ativos com estoque baixo ou ruptura; inativos não contam como ruptura mesmo que tenham zero unidades.
 - Modal de consulta com preço, identificadores, estoque e mínimo demonstrativo, com Escape e restauração de foco.
-- Link contextual para o mapa, acompanhando o código atual da gôndola caso seja renomeado no cadastro demonstrativo.
+- Sem vínculo com o mapa real: os IDs ilustrativos dos produtos não identificam gôndolas da API. Links contextuais ficam indisponíveis até a integração do catálogo.
 - Carregamento, erro e nova tentativa preservam o contrato assíncrono da fonte de dados.
 
 ## Dados e limites
@@ -26,6 +26,6 @@ Cadastro, edição, exclusão, importação e vinculação/transferência de pro
 
 ## Verificação
 
-Lint, build e 86 testes passaram. Os testes incluem limites da regra de disponibilidade, contadores reais da amostra, cópias isoladas, renomeação de gôndola, paginação, filtros combinados, SKU/código de barras, pendências, modal, foco, erro e navegação até o mapa.
+Os testes incluem limites da regra de disponibilidade, contadores da amostra, cópias isoladas, isolamento do mapa real, paginação, filtros combinados, SKU/código de barras, pendências, modal, foco e erro.
 
-Chrome conferido em 1440 × 1000 e sem transbordamento horizontal da página em 1024, 768, 390 e 320px. A tabela usa rolagem própria nas larguras menores. Também foram conferidos a seta centralizada do filtro, ativação do modal por Enter, Escape, retorno do foco e link para a gôndola. A sessão foi simulada apenas no navegador de teste.
+A tabela usa rolagem própria nas larguras menores. Os testes de navegador usam sessão simulada. Referências visuais conferidas na etapa de cobertura visual permanecem no histórico; mudanças de integração exigem nova revisão dos fluxos afetados.

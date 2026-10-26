@@ -1,67 +1,104 @@
-import { shelfCatalogDemo } from '../mocks/shelfCatalog'
-import type { ShelfCatalog, ShelfCatalogItem, ShelfFieldErrors, ShelfInput } from '../types/shelfCatalog'
+import { apiRequest, isRecord } from './apiClient'
+import { ApiHttpError, invalidApiData, readApiList } from './apiData'
+import type { AisleDto, ProductShelfDto, ProductSummaryDto, SectorDto, ShelfDto } from '../types/shelfApi'
+import type { ShelfCatalog, ShelfFieldErrors, ShelfInput } from '../types/shelfCatalog'
 
-// Estado demonstrativo compartilhado pelas telas; recarregar restaura os exemplos.
-let catalog: ShelfCatalog = structuredClone(shelfCatalogDemo)
+const positive = (v: unknown): v is number => typeof v === 'number' && Number.isSafeInteger(v) && v > 0
+const quantity = (v: unknown): v is number => typeof v === 'number' && Number.isSafeInteger(v) && v >= 0
+const text = (v: unknown): v is string => typeof v === 'string' && v.trim().length > 0
+const sectorDto = (v: unknown): v is SectorDto => isRecord(v) && positive(v.id) && text(v.name)
+const aisleDto = (v: unknown): v is AisleDto => isRecord(v) && positive(v.id) && positive(v.sectorId) && text(v.sectorName) && positive(v.position)
+const shelfDto = (v: unknown): v is ShelfDto => isRecord(v) && positive(v.id) && positive(v.aisleId) && positive(v.aislePosition) && positive(v.maximumCapacity)
+const productDto = (v: unknown): v is ProductSummaryDto => isRecord(v) && positive(v.id) && text(v.name)
+const linkDto = (v: unknown): v is ProductShelfDto => isRecord(v) && positive(v.id) && positive(v.productId) && positive(v.shelfId) && quantity(v.productQuantity)
+
+export async function getShelfCatalog(signal?: AbortSignal): Promise<ShelfCatalog> {
+  const [sectors, aisles, shelves, products, links] = await Promise.all([
+    readApiList('/sectors/list', sectorDto, signal), readApiList('/aisles/list', aisleDto, signal),
+    readApiList('/shelves/list', shelfDto, signal), readApiList('/products/list', productDto, signal),
+    readApiList('/product-shelves/list', linkDto, signal),
+  ])
+  const sectorById = new Map(sectors.map(s => [s.id, s]))
+  const aisleById = new Map(aisles.map(a => [a.id, a]))
+  const shelfById = new Map(shelves.map(s => [s.id, s]))
+  const productById = new Map(products.map(p => [p.id, p]))
+  if (aisles.some(a => !sectorById.has(a.sectorId)) || shelves.some(s => !aisleById.has(s.aisleId) || aisleById.get(s.aisleId)?.position !== s.aislePosition)
+    || links.some(l => !shelfById.has(l.shelfId) || !productById.has(l.productId))
+    || new Set(links.map(l => `${l.shelfId}:${l.productId}`)).size !== links.length) invalidApiData()
+  const ordered = [...shelves].sort((a, b) => a.id - b.id)
+  const linksByShelf = new Map<number, ProductShelfDto[]>()
+  for (const link of links) linksByShelf.set(link.shelfId, [...(linksByShelf.get(link.shelfId) ?? []), link])
+  const rowByAisle = new Map<number, number>()
+  return {
+    updatedAt: new Date().toLocaleString('pt-BR'),
+    sectors: sectors.map(s => ({ id: String(s.id), name: s.name })),
+    aisles: [...aisles].sort((a, b) => a.position - b.position || a.id - b.id).map(a => ({ id: String(a.id), sectorId: String(a.sectorId), sectorName: sectorById.get(a.sectorId)!.name, position: a.position })),
+    shelves: ordered.map(s => {
+      const aisle = aisleById.get(s.aisleId)!
+      const ownProducts = (linksByShelf.get(s.id) ?? []).map(l => ({ id: String(l.productId), name: productById.get(l.productId)!.name, shelfUnits: l.productQuantity }))
+      const row = (rowByAisle.get(s.aisleId) ?? 0) + 1
+      rowByAisle.set(s.aisleId, row)
+      const stockoutCount = ownProducts.filter(p => p.shelfUnits === 0).length
+      return { id: String(s.id), aisleId: String(aisle.id), sectorId: String(aisle.sectorId), sectorName: sectorById.get(aisle.sectorId)!.name,
+        location: `Corredor ${aisle.position}`, maximumCapacity: s.maximumCapacity,
+        mapRow: row,
+        productCount: ownProducts.length, productNames: ownProducts.map(p => p.name), products: ownProducts,
+        status: !ownProducts.length ? 'empty' : stockoutCount ? 'stockout' : 'stocked', stockoutCount }
+    }),
+  }
+}
 
 export class ShelfValidationError extends Error {
-  fields: ShelfFieldErrors
-  constructor(fields: ShelfFieldErrors) {
-    super('Confira os campos destacados.')
-    this.name = 'ShelfValidationError'
-    this.fields = fields
+  public fields: ShelfFieldErrors
+  constructor(fields: ShelfFieldErrors) { super('Confira os campos destacados.'); this.name = 'ShelfValidationError'; this.fields = fields }
+}
+export class ShelfMutationUncertainError extends Error {
+  constructor(options?: ErrorOptions) {
+    super('Não foi possível confirmar a operação. Atualize a listagem antes de tentar novamente.', options)
+    this.name = 'ShelfMutationUncertainError'
   }
 }
-
-function validate(input: ShelfInput, originalId?: string) {
-  const normalized = { code: input.code.trim().toUpperCase(), sectorId: input.sectorId, location: input.location.trim() }
-  const errors: ShelfFieldErrors = {}
-  if (!/^[A-Z0-9][A-Z0-9-]{0,11}$/.test(normalized.code)) errors.code = 'Use de 1 a 12 letras, números ou hífen, começando por letra ou número.'
-  else if (catalog.shelves.some((shelf) => shelf.id === normalized.code && shelf.id !== originalId)) errors.code = 'Já existe uma gôndola com esse código.'
-  if (!catalog.sectors.some((sector) => sector.id === normalized.sectorId)) errors.sectorId = 'Selecione um setor válido.'
-  if (!normalized.location || normalized.location.length > 80) errors.location = 'Informe uma localização de até 80 caracteres.'
-  if (Object.keys(errors).length) throw new ShelfValidationError(errors)
-  return normalized
+function values(input: ShelfInput) {
+  const fields: ShelfFieldErrors = {}
+  const aisleId = Number(input.aisleId)
+  const maximumCapacity = Number(input.maximumCapacity)
+  if (!/^\d+$/.test(input.aisleId) || !positive(aisleId)) fields.aisleId = 'Selecione um corredor válido.'
+  if (!/^\d+$/.test(input.maximumCapacity.trim()) || !positive(maximumCapacity) || maximumCapacity > 2147483647) fields.maximumCapacity = 'Informe uma capacidade inteira entre 1 e 2147483647.'
+  if (Object.keys(fields).length) throw new ShelfValidationError(fields)
+  return { aisleId, maximumCapacity }
 }
-
-function freeRow(sectorId: string, originalId?: string) {
-  const occupied = new Set(catalog.shelves.filter((shelf) => shelf.sectorId === sectorId && shelf.id !== originalId).map((shelf) => shelf.mapRow))
-  let row = 1
-  while (occupied.has(row)) row++
-  return row
+function numericId(id: string) {
+  if (!/^\d+$/.test(id) || !positive(Number(id))) throw new Error('Identificador de gôndola inválido.')
+  return encodeURIComponent(id)
 }
-
-/** Fonte temporária sem rede ou escrita no banco. Retorna cópias isoladas. */
-export function getShelfCatalog(): Promise<ShelfCatalog> {
-  return Promise.resolve(structuredClone(catalog))
-}
-
-export async function createShelf(input: ShelfInput): Promise<ShelfCatalog> {
-  const values = validate(input)
-  const sector = catalog.sectors.find((item) => item.id === values.sectorId)!
-  const shelf: ShelfCatalogItem = {
-    id: values.code, sectorId: sector.id, sectorName: sector.name, location: values.location,
-    mapRow: freeRow(sector.id), productCount: 0, productNames: [], status: 'empty', stockoutCount: 0,
+async function mutate(path: `/${string}`, method: string, body?: unknown): Promise<string | null> {
+  let response: Response
+  try {
+    response = await apiRequest(path, { method, ...(body === undefined ? {} : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }) })
+  } catch (cause) { throw new ShelfMutationUncertainError({ cause }) }
+  if (response.status >= 500) throw new ShelfMutationUncertainError()
+  if (response.status === 400) {
+    let payload: unknown
+    try { payload = await response.json() } catch { /* Erros sem JSON continuam sendo HTTP 400. */ }
+    if (isRecord(payload) && isRecord(payload.validationErrors)) {
+      const fields: ShelfFieldErrors = {}
+      for (const field of ['aisleId', 'maximumCapacity'] as const) {
+        if (typeof payload.validationErrors[field] === 'string') fields[field] = field === 'aisleId' ? 'Selecione um corredor válido.' : 'Informe uma capacidade inteira positiva.'
+      }
+      if (Object.keys(fields).length) throw new ShelfValidationError(fields)
+    }
   }
-  catalog = { ...catalog, shelves: [shelf, ...catalog.shelves] }
-  return getShelfCatalog()
+  const expected = method === 'POST' ? 201 : method === 'DELETE' ? 204 : 200
+  if (response.status !== expected) {
+    if (response.ok) throw new ShelfMutationUncertainError()
+    throw new ApiHttpError(response.status)
+  }
+  // O status confirma a escrita. A releitura é separada para não reenviar um POST já confirmado.
+  if (method !== 'DELETE') {
+    try { const payload: unknown = await response.json(); if (shelfDto(payload)) return String(payload.id) } catch { /* A escrita já está confirmada pelo status. */ }
+  }
+  return null
 }
-
-export async function updateShelf(originalId: string, input: ShelfInput): Promise<ShelfCatalog> {
-  const previous = catalog.shelves.find((shelf) => shelf.id === originalId)
-  if (!previous) throw new Error('A gôndola não está mais disponível. Atualize a página e tente novamente.')
-  const values = validate(input, originalId)
-  const sector = catalog.sectors.find((item) => item.id === values.sectorId)!
-  const updated = { ...previous, id: values.code, sectorId: sector.id, sectorName: sector.name, location: values.location,
-    mapRow: previous.sectorId === sector.id ? previous.mapRow : freeRow(sector.id, originalId) }
-  catalog = { ...catalog, shelves: catalog.shelves.map((shelf) => shelf.id === originalId ? updated : shelf) }
-  return getShelfCatalog()
-}
-
-export async function deleteShelf(id: string): Promise<ShelfCatalog> {
-  const shelf = catalog.shelves.find((item) => item.id === id)
-  if (!shelf) throw new Error('A gôndola não está mais disponível. Atualize a página e tente novamente.')
-  if (shelf.productCount > 0) throw new Error('Remova ou transfira os produtos antes de excluir esta gôndola.')
-  catalog = { ...catalog, shelves: catalog.shelves.filter((item) => item.id !== id) }
-  return getShelfCatalog()
-}
+export async function createShelf(input: ShelfInput): Promise<string | null> { return mutate('/shelves/registration', 'POST', values(input)) }
+export async function updateShelf(id: string, input: ShelfInput): Promise<string | null> { return mutate(`/shelves/update/${numericId(id)}`, 'PATCH', values(input)) }
+export async function deleteShelf(id: string): Promise<string | null> { return mutate(`/shelves/delete/${numericId(id)}`, 'DELETE') }

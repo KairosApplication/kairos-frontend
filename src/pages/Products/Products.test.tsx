@@ -85,7 +85,7 @@ it('filtra pendências de estoque sem incluir inativos e limpa a categoria anter
   expect(screen.getByRole('status').textContent).toBe('Exibindo 1–2 de 2 produtos')
 })
 
-it('abre detalhes, restaura foco e leva o produto à gôndola correta no mapa', async () => {
+it('abre detalhes e restaura foco sem associar produtos demonstrativos ao mapa real', async () => {
   await setup()
   const trigger = screen.getByRole('button', { name: 'Ver detalhes de Coca-Cola 2 L' })
   trigger.focus()
@@ -97,9 +97,7 @@ it('abre detalhes, restaura foco e leva o produto à gôndola correta no mapa', 
   expect(screen.queryByRole('dialog')).toBeNull()
   expect(document.activeElement).toBe(trigger)
   fireEvent.click(trigger)
-  fireEvent.click(screen.getByRole('link', { name: 'Ver gôndola A12 no mapa' }))
-  expect(await screen.findByRole('region', { name: 'Gôndola A12' })).toBeTruthy()
-  expect(document.body.style.overflow).toBe('')
+  expect(screen.queryByRole('link', { name: /Ver gôndola/ })).toBeNull()
 })
 
 it('mostra carregamento e permite repetir a consulta após falha', async () => {

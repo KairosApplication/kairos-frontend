@@ -1,11 +1,9 @@
 import { beforeEach, expect, it, vi } from 'vitest'
 
 let products: typeof import('./productCatalogService')
-let shelves: typeof import('./shelfCatalogService')
 beforeEach(async () => {
   vi.resetModules()
   products = await import('./productCatalogService')
-  shelves = await import('./shelfCatalogService')
 })
 
 it('prioriza inatividade e calcula ruptura, estoque baixo e limite disponível', async () => {
@@ -28,9 +26,8 @@ it('retorna amostra coerente e cópias isoladas, sem fabricar o total do protót
   expect((await products.getProductCatalog()).categories).toHaveLength(4)
 })
 
-it('acompanha o código renomeado de uma gôndola sem alterar o estoque do produto', async () => {
-  await shelves.updateShelf('A12', { code: 'A98', sectorId: 'A', location: 'Entrada' })
+it('isola a amostra de produtos das gôndolas reais da API', async () => {
   const data = await products.getProductCatalog()
-  expect(data.shelfCodes.A12).toBe('A98')
+  expect(data.shelfCodes).toEqual({})
   expect(data.products[0]).toMatchObject({ sourceShelfId: 'A12', shelfUnits: 0, warehouseUnits: 84, price: 9.49 })
 })

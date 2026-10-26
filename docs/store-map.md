@@ -1,22 +1,25 @@
-# Mapa da Loja
+# Mapa da Loja — dados reais
 
-A rota protegida `/mapa` usa a captura enviada da seção Web (new), frame `574:277` do Figma: quatro setores, seis posições por corredor, caixas, entrada/saída e painel da gôndola selecionada.
+A rota protegida `/mapa` adapta a mesma fonte HTTP da Gestão de Gôndolas. Contratos, operações e validação estão em [shelf-management.md](shelf-management.md). As cores, cartões, filtros e painel de detalhes preservam a estrutura visual existente.
 
-## Comportamento
+## Organização e seleção
 
-- Seleção inicial A12; cada gôndola é um botão acessível por teclado, com código, situação em texto e estado `aria-pressed`.
-- Busca por código ou pelos produtos disponíveis na demonstração, ignorando acentos, maiúsculas e espaços nas extremidades. O catálogo de produtos demonstrativo está preenchido somente para A12; as outras gôndolas não simulam um catálogo completo.
-- Filtro de setor combinado com a busca. As posições das gôndolas permanecem estáveis no mapa.
-- Se a seleção sair dos resultados, o painel mostra a primeira gôndola visível. Sem resultados, exibe estado vazio com opção de limpar filtros.
-- Legenda calculada para a loja inteira: 17 abastecidas, 4 com estoque baixo e 3 com rupturas. O contador dos filtros indica quantas estão visíveis.
-- Modal de detalhes com foco, Escape e retorno ao botão de origem. Link para a rota existente da central de reposição, que ainda é provisória.
+- Cada coluna corresponde a um corredor real, identificado por ID e posição, com seu setor. Um setor pode possuir vários corredores.
+- Gôndolas ordenadas por ID dentro do corredor. `ShelfDTO.aislePosition` é a posição do **corredor**, conforme o mapper do backend; não fornece a linha física da gôndola.
+- A tela informa que o mapa é esquemático. Caixas, entrada/saída e posições físicas não são simulados como dados reais.
+- Cada gôndola é um botão com identificação, situação textual e `aria-pressed`. A área de corredores tem rolagem própria e pode receber foco pelo teclado em telas estreitas.
+- Busca por ID, corredor ou produto e filtro por setor. A seleção acompanha os resultados visíveis; sem resultados, aparece opção de limpar filtros.
+- `/mapa?gondola=ID` abre a identificação real. Se ela não existir, uma mensagem informa a ausência, sem selecionar silenciosamente outro ID. O usuário pode escolher uma gôndola visível.
+- O painel apresenta todos os produtos vinculados, quantidades, capacidade e situação. O modal mostra setor, corredor, capacidade e produtos sem saldo. Escape fecha e devolve foco.
 
-## Dados e limites
+## Dados ausentes
 
-`src/types/storeMap.ts` contém tipos de apresentação, sem definir contratos da API. `src/mocks/storeMap.ts` contém os dados ilustrativos de 25/09/2026. `getStoreMap` adapta o estado demonstrativo compartilhado de `shelfCatalogService`: cadastro, renomeação, mudança de setor/localização e exclusão de gôndolas vazias na listagem aparecem no mapa durante a navegação. Recarregar restaura os exemplos. Não há rede, credenciais, persistência ou escrita no banco.
+Saldo do depósito, estoque mínimo, responsável, horário de análise e coordenadas físicas não fazem parte dos DTOs consumidos. A interface explicita as ausências pertinentes, sem preencher com exemplos. Ações de reposição fictícia foram substituídas por navegação ao cadastro real de gôndolas.
 
-O rodapé identifica os dados demonstrativos. Carregamento, erro com nova tentativa e resultado vazio são tratados pela página. Gôndolas novas recebem a situação Sem produtos e uma posição livre no setor; a quantidade de posições cresce quando necessário. Edição livre do layout e criação real de reposições ficam pendentes; a ação de criação foi substituída por navegação explícita à central.
+As situações **Com saldo**, **Com saldo zero** e **Sem produtos** são derivadas dos vínculos e quantidades. A legenda considera todas as gôndolas carregadas; o contador acompanha os filtros. O horário do rodapé registra a consulta no navegador.
+
+Carregamento, falha de API/permissão, resposta inválida e resultado vazio têm feedback. Nova tentativa refaz a consulta; nunca substitui falhas por mocks.
 
 ## Verificação
 
-`npm run lint`, `npm run test` e `npm run build` passaram, com 63 testes no total. Os testes cobrem filtros combinados, troca de seleção, consistência dos totais, estado vazio, falha com nova tentativa, modal e navegação. A revisão no Chrome confirmou o frame de 1440 × 1000, seleção por Enter, modal com Escape e restauração de foco, além da ausência de transbordamento horizontal em 1024, 768, 390 e 320px. A sessão foi simulada somente no navegador de teste. O Header e a Sidebar existentes não foram alterados.
+Testes de componentes e de navegador cobrem corredores múltiplos por setor, identidade compartilhada com o cadastro, filtros, URL ausente, modal, foco e layouts estreitos nos dois temas. A auditoria automatizada A/AA continua incluindo mapa e formulário. A conformidade completa ainda depende da revisão manual registrada no planejamento.

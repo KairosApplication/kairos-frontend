@@ -1,11 +1,13 @@
 import type { Page } from '@playwright/test'
 import { managerPages } from '../src/routes/managerPages'
+import { handleShelfFixture, makeShelfApiFixture } from '../src/test/shelvesApiFixture'
 
 export const panelPages = managerPages
 
 // HTTP responses exist only inside browser tests. No production account or API is used.
 export async function mockSession(page: Page, authenticated = true) {
   let signedIn = authenticated
+  const db = makeShelfApiFixture()
   await page.route('**/api/v1/**', async (route) => {
     const request = route.request()
     const path = new URL(request.url()).pathname
@@ -13,7 +15,7 @@ export async function mockSession(page: Page, authenticated = true) {
       'Access-Control-Allow-Origin': request.headers().origin ?? 'http://127.0.0.1:4175',
       'Access-Control-Allow-Credentials': 'true',
       'Access-Control-Allow-Headers': 'Content-Type, X-CSRF-TOKEN',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
     }
     if (request.method() === 'OPTIONS') { await route.fulfill({ status: 204, headers }); return }
     if (path === '/api/v1/auth/me') {
@@ -27,8 +29,14 @@ export async function mockSession(page: Page, authenticated = true) {
       await route.fulfill({ headers, json: { accessToken: 'browser-test-access', tokenType: 'Bearer', expiresIn: 900 } }); return
     }
     if (path === '/api/v1/auth/logout') { signedIn = false; await route.fulfill({ status: 204, headers }); return }
+    if (!signedIn) { await route.fulfill({ status: 401, headers }); return }
+    const data = handleShelfFixture(db, request.method(), path.replace('/api/v1', ''), request.postData() ? request.postDataJSON() : undefined)
+    if (data) {
+      await route.fulfill({ status: data.status, headers, ...(data.json === undefined ? {} : { json: data.json }) }); return
+    }
     await route.fulfill({ status: 503, headers, json: { message: 'No real API is available in this test.' } })
   })
+  return db
 }
 
 export async function preferredTheme(page: Page, theme: 'light' | 'dark') {

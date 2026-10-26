@@ -25,11 +25,11 @@ export default function DeleteShelf({ shelf, onClose, onDelete }: DeleteShelfPro
   }
 
   return <Modal open onClose={() => { if (!pending.current) onClose() }} initialFocusRef={cancel}
-    title={`Excluir gôndola ${shelf.id}?`} description="Demonstração: a exclusão vale somente até recarregar a página."
+    title={`Excluir gôndola ${shelf.id}?`} description="A exclusão será gravada na loja. Confirme antes de continuar."
     actions={<><Button ref={cancel} variant="secondary" onClick={onClose} disabled={deleting}>Cancelar</Button>
       <Button variant="danger" disabled={blocked} loading={deleting} loadingLabel="Excluindo…" onClick={() => { void confirm() }}>Excluir gôndola</Button></>}>
     <p>{shelf.sectorName} · {shelf.location}</p>
-    <p>{blocked ? `Esta gôndola possui ${shelf.productCount} produtos vinculados. Remova ou transfira os produtos antes de excluir.` : 'Confirme a remoção desta gôndola vazia da listagem e do mapa demonstrativos.'}</p>
+    <p>{blocked ? `Esta gôndola possui ${shelf.productCount} produtos vinculados. Remova ou transfira os produtos antes de excluir.` : 'Confirme a remoção desta gôndola vazia do cadastro e do mapa.'}</p>
     {error && <p className="shelves__form-error" role="alert">{error}</p>}
   </Modal>
 }
