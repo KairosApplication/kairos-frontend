@@ -3,23 +3,17 @@ import { mockSession } from './support'
 
 test.beforeEach(async ({ page }) => { await mockSession(page) })
 
-test('@a11y perfil associa erro e preserva foco durante correção; sucesso pode ser repetido', async ({ page }) => {
+test('@a11y perfil usa a conta autenticada e identifica os dados em consulta', async ({ page }) => {
   await page.goto('/perfil')
-  const name = page.getByRole('textbox', { name: 'Nome completo', exact: true })
-  await name.fill('   ')
-  await page.getByRole('button', { name: 'Salvar alterações' }).click()
-  await expect(name).toBeFocused()
-  await expect(name).toHaveAttribute('aria-invalid', 'true')
-  await expect(name).toHaveAccessibleDescription('Preencha este campo.')
-  await name.fill('Ana Acessível')
-  await expect(name).toBeFocused()
-  await expect(name).not.toHaveAttribute('aria-invalid', 'true')
-  await page.getByRole('button', { name: 'Salvar alterações' }).click()
-  const status = page.getByRole('status', { name: 'Resultado da operação' })
-  await expect(status).toContainText('Sua conta real não foi alterada')
-  await status.evaluate(element => { const child = element.firstElementChild; const observer = new MutationObserver(() => { if (element.firstElementChild !== child) element.setAttribute('data-updated', 'true') }); observer.observe(element, { childList: true }) })
-  await page.getByRole('button', { name: 'Salvar alterações' }).click()
-  await expect(status).toHaveAttribute('data-updated', 'true')
+  await expect(page.getByRole('heading', { name: 'gerente.acessibilidade@kairos.example' })).toBeVisible()
+  const email = page.getByRole('textbox', { name: 'E-mail corporativo', exact: true })
+  await email.focus()
+  await expect(email).toBeFocused()
+  await expect(email).toHaveValue('gerente.acessibilidade@kairos.example')
+  await expect(email).toHaveAttribute('readonly', '')
+  await expect(page.getByRole('textbox', { name: 'Nome completo', exact: true })).toHaveValue('')
+  await expect(page.getByText('Ana Costa', { exact: true })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Salvar alterações' })).toHaveCount(0)
 })
 
 test('@a11y configurações identifica unidade e e-mail inválidos e nomeia o grupo de tema', async ({ page }) => {
@@ -36,6 +30,13 @@ test('@a11y configurações identifica unidade e e-mail inválidos e nomeia o gr
   await expect(email).toBeFocused()
   await expect(email).toHaveAccessibleDescription('Informe um e-mail válido.')
   await expect(page.getByRole('group', { name: 'Tema', exact: true })).toBeVisible()
+  await email.fill('contato@kairos.example')
+  await page.getByRole('button', { name: 'Salvar alterações' }).click()
+  const status = page.getByRole('status', { name: 'Resultado da operação' })
+  await expect(status).not.toBeEmpty()
+  await status.evaluate(element => { const child = element.firstElementChild; const observer = new MutationObserver(() => { if (element.firstElementChild !== child) element.setAttribute('data-updated', 'true') }); observer.observe(element, { childList: true }) })
+  await page.getByRole('button', { name: 'Salvar alterações' }).click()
+  await expect(status).toHaveAttribute('data-updated', 'true')
 })
 
 test('@a11y funcionário informa e-mail duplicado no campo e permite cancelar pelo teclado', async ({ page }) => {

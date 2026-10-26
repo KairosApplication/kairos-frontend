@@ -1,40 +1,70 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, expect, it } from 'vitest'
+import { MemoryRouter } from 'react-router'
+import { afterEach, expect, it, vi } from 'vitest'
 import Profile from './index'
+import Header from '../../components/Header'
+import Sidebar from '../../components/Sidebar'
+import { AuthContext, type AuthContextValue } from '../../contexts/AuthContext'
+import { initialAuthState, type AuthState } from '../../contexts/authReducer'
+import type { SessionUser } from '../../types/auth'
 import { mockDialogs } from '../../test/dialog'
 mockDialogs()
 afterEach(cleanup)
 
-it('salva apenas a prévia e preserva cargo e permissão', async () => {
-  render(<Profile />)
-  const input = await screen.findByRole('textbox', { name: 'Nome completo' })
-  fireEvent.change(input, { target: { value: 'Ana de Teste' } })
-  fireEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }))
-  expect(screen.getByRole('heading', { name: 'Ana de Teste' })).toBeTruthy()
-  expect(screen.getByRole('status').textContent).toContain('Sua conta real não foi alterada')
-  expect(screen.getByText('Administrador da unidade')).toBeTruthy()
+const manager: SessionUser = { email: 'gerente.real@kairos.example', roles: ['MANAGER'] }
+function view(user: SessionUser | null = manager, status: AuthState['status'] = 'authenticated') {
+  const value: AuthContextValue = {
+    state: { ...initialAuthState, status, user },
+    signIn: vi.fn(), signOut: vi.fn(), refreshSession: vi.fn(),
+  }
+  return <MemoryRouter initialEntries={['/perfil']}><AuthContext.Provider value={value}><Header /><Sidebar /><Profile /></AuthContext.Provider></MemoryRouter>
+}
+
+it('mostra a mesma conta autenticada no perfil, Header e Sidebar sem identidade ou loja fictícia', () => {
+  render(view())
+  expect(screen.getByRole('heading', { name: manager.email })).toBeTruthy()
+  expect(screen.getByRole('textbox', { name: 'E-mail corporativo' })).toHaveProperty('value', manager.email)
+  expect(screen.getAllByText(manager.email)).toHaveLength(3)
+  expect(screen.queryByText('Ana Costa')).toBeNull()
+  expect(document.body.textContent).not.toContain('Mercado Aurora')
+  expect(screen.getByText('Loja não informada')).toBeTruthy()
 })
 
-it('trata a segurança como demonstração e restaura foco do modal de senha', async () => {
-  render(<Profile />)
-  const toggle = await screen.findByRole('switch', { name: 'Autenticação em duas etapas' })
-  expect(toggle.getAttribute('aria-checked')).toBe('true')
-  fireEvent.click(toggle)
-  expect(toggle.getAttribute('aria-checked')).toBe('false')
-  expect(screen.getByRole('status').textContent).toContain('Nenhuma configuração real')
+it('não apresenta campos ausentes ou segurança desconhecida como dados confirmados/editáveis', () => {
+  render(view())
+  const name = screen.getByRole('textbox', { name: 'Nome completo' })
+  expect(name).toHaveProperty('value', '')
+  expect(name).toHaveProperty('readOnly', true)
+  expect(screen.getByRole('textbox', { name: 'E-mail corporativo' })).toHaveProperty('readOnly', true)
+  expect(screen.getByRole('textbox', { name: 'Telefone' })).toHaveProperty('value', '')
+  expect(screen.queryByRole('button', { name: 'Salvar alterações' })).toBeNull()
+  expect(screen.queryByRole('switch', { name: 'Autenticação em duas etapas' })).toBeNull()
+  expect(screen.getByText('Configuração não informada.')).toBeTruthy()
+  expect(screen.queryByText('Administrador da unidade')).toBeNull()
+})
+
+it('troca a identificação quando outra conta assume a sessão, sem conservar o usuário anterior', () => {
+  const page = render(view())
+  const next: SessionUser = { email: 'outra.gerente@kairos.example', roles: ['MANAGER'] }
+  page.rerender(view(next))
+  expect(screen.getByRole('heading', { name: next.email })).toBeTruthy()
+  expect(screen.queryByText(manager.email)).toBeNull()
+  expect(screen.getByRole('textbox', { name: 'E-mail corporativo' })).toHaveProperty('value', next.email)
+})
+
+it.each([null, { email: 'pessoa@kairos.example', roles: ['EMPLOYEE'] } satisfies SessionUser])('não revela o perfil sem uma sessão de gerente: %j', user => {
+  render(view(user, user ? 'authenticated' : 'anonymous'))
+  expect(screen.getByRole('alert').textContent).toContain('Identificação indisponível')
+  expect(screen.queryByRole('textbox', { name: 'E-mail corporativo' })).toBeNull()
+})
+
+it('orienta sobre senha sem coletar credenciais e devolve o foco ao fechar', () => {
+  render(view())
   const trigger = screen.getByRole('button', { name: 'Alterar senha' })
   trigger.focus(); fireEvent.click(trigger)
-  expect(screen.getByText(/não recebe nem altera sua senha/)).toBeTruthy()
+  expect(screen.getByText(/Este painel não recebe nem altera sua senha/)).toBeTruthy()
+  expect(screen.queryByLabelText('Nova senha')).toBeNull()
   fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
   expect(document.activeElement).toBe(trigger)
-})
-
-it('rejeita um arquivo que não é imagem sem produzir prévia', async () => {
-  render(<Profile />)
-  await screen.findByRole('textbox', { name: 'Nome completo' })
-  const file = new File(['teste'], 'teste.txt', { type: 'text/plain' })
-  fireEvent.change(screen.getByLabelText('Selecionar foto do perfil'), { target: { files: [file] } })
-  expect(screen.getByRole('alert').textContent).toContain('PNG, JPEG ou WebP')
-  expect(screen.queryByRole('img', { name: 'Prévia da foto de perfil' })).toBeNull()
 })

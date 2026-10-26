@@ -2,6 +2,8 @@
 
 Task KAIROS-72; revalidação de KAIROS-74 e KAIROS-78.
 
+Atualização em 26/10/2026: o Perfil passou a consultar a identidade autenticada, sem formulário de edição demonstrativa. A cobertura de validação e sucesso repetido foi mantida no formulário de Configurações; o teste do Perfil agora verifica identidade, campos de consulta e ausência de dados fictícios. Os itens abaixo registram a entrega original da PR #44.
+
 - Perfil, Configurações, cadastro demonstrativo de Funcionários e criação demonstrativa de Reposições associam os erros a seus campos via TextField, aria-invalid e aria-describedby.
 - Campos obrigatórios rejeitam também espaços em branco; e-mail, limites numéricos e validade nativa são conferidos antes de aceitar o formulário.
 - O primeiro campo inválido recebe foco após a renderização. Corrigir um campo não move o foco para outro campo automaticamente.
