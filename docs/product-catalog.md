@@ -33,7 +33,7 @@ Os quatro indicadores, além do total, são exclusivos entre si. Saldo positivo 
 
 SKU, código de barras, ativo/inativo, estoque mínimo e quantidade no depósito não são retornados nesta consulta e não são fabricados. A API de inventário consultada fornece identificação/setor e verificação booleana de disponibilidade para uma quantidade solicitada; isso não revela a quantidade total disponível.
 
-Cadastro, edição e exclusão estão implementados com a correção de empresa da API na branch `fix/product-company-mutations`. Importação, movimentação e vinculação de produtos continuam pendentes.
+Cadastro, edição e exclusão estão implementados com a [correção de empresa da API na PR #38](https://github.com/KairosApplication/kairos-springboot/pull/38). Importação, movimentação e vinculação de produtos continuam pendentes.
 
 ## Operações persistentes
 
