@@ -37,7 +37,7 @@ export function addProductCatalogCases(db: ShelfApiFixture) {
 // Simulador de HTTP exclusivo dos testes; nunca é importado pelos services de produção.
 export function handleShelfFixture(db: ShelfApiFixture, method: string, path: string, body?: unknown): { status: number; json?: unknown } | null {
   if (method === 'GET' && path === '/categories/list') return { status: 200, json: db.categories }
-  if ((method === 'POST' && path === '/products/company/registration') || (method === 'PATCH' && path.startsWith('/products/company/update/'))) {
+  if ((method === 'POST' && path === '/products/registration') || (method === 'PATCH' && path.startsWith('/products/update/'))) {
     if (typeof body !== 'object' || !body || !('name' in body) || !('brand' in body) || !('price' in body) || !('categoryId' in body)) return { status: 400, json: {} }
     const category = db.categories.find(c => c.id === body.categoryId)
     if (!category || typeof body.name !== 'string' || !body.name.trim() || typeof body.brand !== 'string' || !body.brand.trim() || typeof body.price !== 'number' || body.price < 0) return { status: 400, json: {} }
@@ -49,7 +49,7 @@ export function handleShelfFixture(db: ShelfApiFixture, method: string, path: st
     else db.products = db.products.map(p => p.id === id ? product : p)
     return { status: method === 'POST' ? 201 : 200, json: product }
   }
-  if (method === 'DELETE' && path.startsWith('/products/company/delete/')) {
+  if (method === 'DELETE' && path.startsWith('/products/delete/')) {
     const id = Number(path.split('/').at(-1))
     if (db.links.some(l => l.productId === id)) return { status: 409, json: {} }
     if (!db.products.some(p => p.id === id)) return { status: 404, json: {} }

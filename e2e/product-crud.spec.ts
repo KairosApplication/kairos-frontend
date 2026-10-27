@@ -20,7 +20,7 @@ test('creates the first company product, edits its numeric price and confirms de
   await page.getByRole('button', { name: 'Criar produto', exact: true }).click()
   await expect(page.getByRole('rowheader', { name: 'Produto de teste' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Novo produto', exact: true })).toBeFocused()
-  expect(mutations[0]).toEqual({ path: '/api/v1/products/company/registration', body: { name: 'Produto de teste', brand: 'Marca de teste', categoryId: 4, price: 12.34 } })
+  expect(mutations[0]).toEqual({ path: '/api/v1/products/registration', body: { name: 'Produto de teste', brand: 'Marca de teste', categoryId: 4, price: 12.34 } })
   await page.reload()
   await page.getByRole('button', { name: 'Editar produto 1', exact: true }).click()
   await expect(page.getByRole('textbox', { name: 'Preço (R$)' })).toHaveValue('12,34')
@@ -44,7 +44,7 @@ test('pending submission blocks double save and closing until the server acknowl
   let release!: () => void
   const gate = new Promise<void>(resolve => { release = resolve })
   let posts = 0
-  await page.route('**/api/v1/products/company/registration', async route => {
+  await page.route('**/api/v1/products/registration', async route => {
     if (route.request().method() !== 'POST') { await route.fallback(); return }
     posts++; await gate; await route.fallback()
   })

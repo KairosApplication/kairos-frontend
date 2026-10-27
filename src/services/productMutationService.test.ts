@@ -13,11 +13,11 @@ it('loads categories even when the company has no products', async () => {
   api.db.products = []; api.db.links = []
   expect(await getProductCategories()).toContainEqual({ id: '4', name: 'Limpeza' })
 })
-it('sends normalized numeric data with CSRF only to company routes, never a company supplied by the client', async () => {
+it('sends normalized numeric data with CSRF to the product routes, without a company supplied by the client', async () => {
   const id = await createProduct(valid)
   expect(id).toBe('4')
   const [url, options] = writes()[0]
-  expect(String(url)).toMatch(/\/products\/company\/registration$/)
+  expect(String(url)).toMatch(/\/products\/registration$/)
   expect(JSON.parse(String(options?.body))).toEqual({ name: 'Produto teste', brand: 'Marca', categoryId: 4, price: 12.34 })
   expect(new Headers(options?.headers).get('X-CSRF-TOKEN')).toBe('fixture-csrf')
   await updateProduct(id!, { ...valid, price: '0' })
@@ -34,12 +34,12 @@ it('accepts maximum precision and validates names, brands and category IDs', asy
   expect(api.db.products.at(-1)?.price).toBe(9999999999.99)
   await expect(createProduct({ ...valid, name: ' ', brand: '', categoryId: '-1' })).rejects.toMatchObject({ fields: { name: expect.any(String), brand: expect.any(String), categoryId: expect.any(String) } })
 })
-it.each([400, 401, 403, 404, 409, 503])('handles HTTP %s without repeating or falling back to legacy mutations', async status => {
+it.each([400, 401, 403, 404, 409, 503])('handles HTTP %s without repeating mutations', async status => {
   api.fetch.mockImplementation(async (input, options) => options?.method === 'POST'
     ? Response.json(status === 400 ? { validationErrors: { price: 'invalid', unknown: 'ignore' } } : {}, { status }) : api.respond(input, options))
   await expect(createProduct(valid)).rejects.toBeInstanceOf(status === 400 || status === 409 ? ProductValidationError : status === 503 ? ProductMutationUncertainError : ApiHttpError)
   expect(writes()).toHaveLength(1)
-  expect(String(writes()[0][0])).toMatch(/\/products\/company\/registration$/)
+  expect(String(writes()[0][0])).toMatch(/\/products\/registration$/)
 })
 it('treats a lost response as uncertain and does not repeat the write', async () => {
   api.fetch.mockImplementation(async (input, options) => { if (options?.method === 'POST') throw new TypeError('network'); return api.respond(input, options) })

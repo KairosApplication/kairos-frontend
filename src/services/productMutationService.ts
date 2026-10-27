@@ -72,6 +72,6 @@ async function mutate(path: `/${string}`, method: 'POST' | 'PATCH' | 'DELETE', b
   }
   return null
 }
-export async function createProduct(input: ProductInput) { return mutate('/products/company/registration', 'POST', values(input)) }
-export async function updateProduct(id: string, input: ProductInput) { return mutate(`/products/company/update/${numericId(id)}`, 'PATCH', values(input)) }
-export async function deleteProduct(id: string) { return mutate(`/products/company/delete/${numericId(id)}`, 'DELETE') }
+export async function createProduct(input: ProductInput) { return mutate('/products/registration', 'POST', values(input)) }
+export async function updateProduct(id: string, input: ProductInput) { return mutate(`/products/update/${numericId(id)}`, 'PATCH', values(input)) }
+export async function deleteProduct(id: string) { return mutate(`/products/delete/${numericId(id)}`, 'DELETE') }
