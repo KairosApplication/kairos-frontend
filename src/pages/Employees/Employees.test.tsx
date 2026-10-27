@@ -38,7 +38,7 @@ it('creates an account with the API payload, edits its position and deletes only
   fireEvent.click(screen.getByRole('button', { name: 'Editar função de Pessoa Teste' }))
   fireEvent.change(screen.getByLabelText('Função *'), { target: { value: 'CASHIER' } })
   fireEvent.click(screen.getByRole('button', { name: 'Salvar funcionário' }))
-  await waitFor(() => expect(db.employees.find(p => p.id === 4)?.position).toBe('CASHIER'))
+  await waitFor(() => expect(db.employees.find(p => p.id === 4)?.position).toBe('cashier'))
   await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
   fireEvent.click(screen.getByRole('button', { name: 'Excluir funcionário 4' }))
   expect(db.employees).toHaveLength(4)

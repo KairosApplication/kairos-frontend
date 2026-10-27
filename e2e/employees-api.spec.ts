@@ -12,7 +12,7 @@ test('employee registration, role edit and deletion use the available API contra
   await page.getByRole('dialog', { name: 'Editar função' }).getByRole('combobox', { name: 'Função', exact: true }).selectOption('CASHIER')
   await page.getByRole('button', { name: 'Salvar funcionário' }).click()
   await expect(page.getByRole('dialog')).toHaveCount(0)
-  expect(db.employees.find(p => p.id === 4)?.position).toBe('CASHIER')
+  expect(db.employees.find(p => p.id === 4)?.position).toBe('cashier')
   await page.getByRole('button', { name: 'Excluir funcionário 4', exact: true }).click()
   await page.getByRole('button', { name: 'Confirmar exclusão' }).click()
   await expect(page.getByRole('heading', { name: 'Pessoa Teste' })).toHaveCount(0)
