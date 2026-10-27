@@ -27,7 +27,7 @@ test('@a11y modal contém Tab e Shift+Tab, fecha com Escape e devolve o foco', a
   const dialog = page.getByRole('dialog', { name: 'Novo funcionário', exact: true })
   await expect(dialog.getByRole('heading', { level: 2 })).toBeFocused()
   await page.keyboard.press('Shift+Tab')
-  await expect(dialog.getByRole('button', { name: 'Adicionar à demonstração' })).toBeFocused()
+  await expect(dialog.getByRole('button', { name: 'Salvar funcionário' })).toBeFocused()
   await page.keyboard.press('Tab')
   await expect(dialog.getByRole('button', { name: 'Fechar janela' })).toBeFocused()
   await page.keyboard.press('Escape')

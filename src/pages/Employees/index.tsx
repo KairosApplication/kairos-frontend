@@ -1,6 +1,5 @@
-import { useState, type SubmitEvent } from 'react'
-import { ChevronDown, Clock3, Pencil, Plus, RefreshCw, Search, ShoppingCart, UserRound } from 'lucide-react'
-import Badge from '../../components/Badge'
+import { useRef, useState, type SubmitEvent } from 'react'
+import { Plus, Search, UserRound } from 'lucide-react'
 import Button from '../../components/Button'
 import Card from '../../components/Card'
 import Feedback from '../../components/Feedback'
@@ -8,79 +7,83 @@ import Modal from '../../components/Modal'
 import SelectField from '../../components/SelectField'
 import TextField from '../../components/TextField'
 import VisualPage from '../../components/VisualPage'
-import useDemoData from '../../hooks/useDemoData'
+import useApiData from '../../hooks/useApiData'
 import useFormValidation from '../../hooks/useFormValidation'
-import useStatusMessage from '../../hooks/useStatusMessage'
-import StatusMessage from '../../components/StatusMessage'
-import { getEmployeesView } from '../../services/employeesViewService'
-import type { EmployeeView } from '../../types/employeesView'
+import { ApiHttpError } from '../../services/apiData'
+import { EmployeeWriteUncertainError, getEmployees, writeEmployee, type ApiEmployee } from '../../services/employeesApiService'
 import './styles.css'
-
-const statuses = { active: 'Em atividade', off: 'Fora do turno', inactive: 'Inativo' }
-const tones = { active: 'success', off: 'warning', inactive: 'danger' } as const
-const initials = (name: string) => name.split(' ').filter(Boolean).map((part) => part[0]).slice(0, 2).join('')
-const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
-
+const roles = { MANAGER: 'Gerente', STOCKER: 'Repositor', CASHIER: 'Caixa' }
+const normalize = (v: string) => v.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
 export default function Employees() {
-  const { data, loading, error, retry } = useDemoData(getEmployeesView)
-  const [created, setCreated] = useState<EmployeeView[]>([])
-  const [search, setSearch] = useState('')
+  const { data, error, reload, fail } = useApiData(getEmployees)
+  const [query, setQuery] = useState('')
   const [role, setRole] = useState('all')
-  const [status, setStatus] = useState('all')
   const [page, setPage] = useState(1)
-  const [selected, setSelected] = useState<EmployeeView | null>(null)
-  const [creating, setCreating] = useState(false)
-  const [message, setMessage] = useStatusMessage()
-  const { formRef, errors, validate, reject, clear, reset } = useFormValidation()
-  const people = [...created, ...(data ?? [])]
-  const filtered = people.filter((person) => normalize(`${person.name} ${person.email}`).includes(normalize(search)) && (role === 'all' || person.role === role) && (status === 'all' || person.status === status))
+  const [dialog, setDialog] = useState<{ action: 'create' | 'edit' | 'delete' | 'details'; person?: ApiEmployee } | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [message, setMessage] = useState('')
+  const [failure, setFailure] = useState('')
+  const pending = useRef(false)
+  const createButton = useRef<HTMLButtonElement>(null)
+  const { formRef, errors, validate, reject, reset, clear } = useFormValidation()
+  const filtered = data?.filter(p => (role === 'all' || p.position === role) && normalize(`${p.id} ${p.userName}`).includes(normalize(query))) ?? []
   const currentPage = Math.min(page, Math.max(1, Math.ceil(filtered.length / 6)))
   const rows = filtered.slice((currentPage - 1) * 6, currentPage * 6)
-  const active = people.filter((person) => person.status === 'active').length
-  const stockers = people.filter((person) => person.role === 'Repositor')
-  const salesTeam = people.filter((person) => person.role !== 'Repositor')
-
-  function create(event: SubmitEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (!validate(event.currentTarget)) return
-    const form = new FormData(event.currentTarget)
-    const name = String(form.get('name') ?? '').trim()
-    const email = String(form.get('email') ?? '').trim().toLowerCase()
-    if (people.some((person) => person.email.toLowerCase() === email)) { reject({ email: 'Este e-mail já está na demonstração.' }); return }
-    const newRole = String(form.get('role')) as EmployeeView['role']
-    setCreated((previous) => [{ id: `demo-${previous.length + 1}`, name, email, role: newRole, shift: 'Manhã', status: 'off', location: 'Sem posto atribuído' }, ...previous])
-    setCreating(false); setPage(1); setRole('all'); setStatus('all'); setSearch(''); reset()
-    setMessage('Funcionário adicionado à demonstração. Nenhuma conta ou acesso real foi criado.')
+  function open(action: NonNullable<typeof dialog>['action'], person?: ApiEmployee) { reset(); setFailure(''); setDialog({ action, person }) }
+  async function submit(event?: SubmitEvent<HTMLFormElement>) {
+    event?.preventDefault()
+    if (pending.current || !dialog || !data) return
+    let body: unknown
+    if (dialog.action !== 'delete') {
+      if (!event || !validate(event.currentTarget)) return
+      const fields = new FormData(event.currentTarget)
+      const position = String(fields.get('position'))
+      if (!['CASHIER', 'STOCKER'].includes(position)) { reject({ position: 'Selecione uma função disponível.' }); return }
+      if (dialog.action === 'create') {
+        const name = String(fields.get('name')).trim().split(/\s+/)
+        if (name.length < 2) { reject({ name: 'Informe nome e sobrenome.' }); return }
+        const birthDate = String(fields.get('birthDate'))
+        const today = new Date(); const localDay = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+        if (birthDate > localDay) { reject({ birthDate: 'Informe uma data de nascimento válida.' }); return }
+        body = { position, user: { name: name.shift(), lastName: name.join(' '), birthDate, email: String(fields.get('email')).trim(), cpf: String(fields.get('cpf')).replace(/\D/g, ''), password: String(fields.get('password')) } }
+      } else body = { position }
+    }
+    pending.current = true; setBusy(true); setFailure(''); setMessage('')
+    try {
+      await writeEmployee(dialog.action === 'create' ? 'POST' : dialog.action === 'edit' ? 'PATCH' : 'DELETE', dialog.person?.id, body)
+      setDialog(null); setMessage('Cadastro atualizado com sucesso.'); setPage(1); setQuery(''); setRole('all')
+      await reload(); setTimeout(() => createButton.current?.focus(), 0)
+    } catch (cause) {
+      if (cause instanceof EmployeeWriteUncertainError || cause instanceof ApiHttpError && cause.status === 401) { setDialog(null); fail(cause) }
+      else setFailure(cause instanceof Error ? cause.message : 'Não foi possível atualizar o cadastro.')
+    } finally { pending.current = false; setBusy(false) }
   }
-
-  return <VisualPage title="Funcionários" description="Gerencie os acessos e acompanhe a equipe da loja." className="employees"
-    actions={<Button icon={<Plus />} onClick={() => { reset(); setCreating(true) }}>Novo funcionário</Button>}>
-    <StatusMessage notice={message} />
-    {error ? <Feedback kind="error" title="Não foi possível carregar a equipe." onRetry={retry} /> : loading ? <Feedback kind="loading" title="Carregando equipe…" /> : <div className="employees__layout">
-      <Card tone="brand" className="employees__summary"><p className="employees__eyebrow">Equipe · Unidade Centro</p><strong className="employees__total">{active}</strong><p>pessoas em atividade</p><small>de {people.length} funcionários cadastrados</small>
-        <div className="employees__progress" role="img" aria-label={`${active} de ${people.length} funcionários em atividade`}><span style={{ width: `${people.length ? active / people.length * 100 : 0}%` }} /></div>
-        <h2>Cobertura por função</h2><p className="employees__coverage-label">Reposição</p><strong className="employees__coverage">{stockers.filter((person) => person.status === 'active').length} de {stockers.length}</strong><p className="employees__coverage-label">Vendas e caixas</p><strong className="employees__coverage">{salesTeam.filter((person) => person.status === 'active').length} de {salesTeam.length}</strong>
-        <div className="employees__shift"><h3><Clock3 size={18} aria-hidden="true" />Turno da manhã</h3><p>Acompanhe a distribuição da equipe durante o dia.</p></div>
+  const person = dialog?.person
+  return <VisualPage title="Funcionários" description="Consulte e gerencie os cadastros disponibilizados pela API." className="employees" footer="Cadastros consultados na API"
+    actions={<Button ref={createButton} icon={<Plus />} disabled={!data} onClick={() => open('create')}>Novo funcionário</Button>}>
+    {message && <p role="status">{message}</p>}
+    {error ? <Feedback kind="error" title="Não foi possível carregar a equipe." description={error.message} onRetry={() => void reload()} /> : !data ? <Feedback kind="loading" title="Carregando equipe…" /> : <div className="employees__layout">
+      <Card tone="brand" className="employees__summary"><p className="employees__eyebrow">Equipe cadastrada</p><strong className="employees__total">{data.length}</strong><p>funcionários retornados</p>
+        <h2>Distribuição por função</h2>{Object.entries(roles).map(([key, label]) => <div key={key}><p>{label}</p><strong>{data.filter(p => p.position === key).length}</strong></div>)}
+        <div className="employees__shift"><h3>Dados do cadastro</h3><p>Turno, presença e posto de trabalho não são informados nesta consulta.</p></div>
       </Card>
-      <div className="employees__content"><div className="visual-toolbar"><TextField label="Buscar nome ou e-mail" type="search" placeholder="Buscar nome ou e-mail" icon={<Search size={18} />} value={search} onChange={(event) => { setSearch(event.target.value); setPage(1) }} />
-        <div className="visual-filter-select"><SelectField label="Função" value={role} onChange={(event) => { setRole(event.target.value); setPage(1) }}><option value="all">Todas as funções</option>{['Repositor', 'Caixa', 'Vendedor'].map((item) => <option key={item}>{item}</option>)}</SelectField><ChevronDown size={18} aria-hidden="true" /></div>
-        <div className="visual-filter-select employees__status"><SelectField label="Status" value={status} onChange={(event) => { setStatus(event.target.value); setPage(1) }}><option value="all">Status</option>{Object.entries(statuses).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</SelectField><ChevronDown size={18} aria-hidden="true" /></div>
-      </div>
-      <div className="employees__heading"><h2>Sua equipe</h2><p role="status">{rows.length} de {filtered.length} funcionários</p></div>
-      <div className="employees__cards">{rows.map((person) => <Card className="employee-card" key={person.id}>
-        <div className="employee-card__top"><span className="employee-card__avatar">{initials(person.name)}</span><span aria-hidden="true">{person.role === 'Repositor' ? <RefreshCw size={18} /> : person.role === 'Caixa' ? <ShoppingCart size={18} /> : <UserRound size={18} />}</span></div>
-        <h3>{person.name}</h3><p>{person.role} · {person.shift}</p><Badge tone={tones[person.status]}>{statuses[person.status]}</Badge>
-        <footer><small>{person.location}</small><div><Button variant="ghost" onClick={() => setSelected(person)} aria-label={`Ver perfil de ${person.name}`}>Ver perfil</Button><Button variant="ghost" onClick={() => setSelected(person)} aria-label={`Consultar cadastro de ${person.name}`}><Pencil size={16} aria-hidden="true" /></Button></div></footer>
-      </Card>)}</div>
-      {!rows.length && <Feedback kind="empty" title="Nenhum funcionário encontrado" description="Ajuste a busca, a função ou o status." />}
-      <div className="employees__pagination"><span>Mostrando {filtered.length ? (currentPage - 1) * 6 + 1 : 0}–{Math.min(currentPage * 6, filtered.length)} de {filtered.length} pessoas</span><nav aria-label="Paginação da equipe"><Button variant="ghost" disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)}>Anterior</Button><span aria-current="page">{currentPage}</span><Button variant="ghost" disabled={currentPage * 6 >= filtered.length} onClick={() => setPage(currentPage + 1)}>Próxima →</Button></nav></div>
-      </div>
-    </div>}
-    <Modal open={Boolean(selected)} onClose={() => setSelected(null)} title={selected?.name ?? 'Perfil do funcionário'} description="Cadastro fictício. Nenhuma permissão real é alterada." actions={<Button variant="secondary" onClick={() => setSelected(null)}>Fechar</Button>}>
-      {selected && <dl className="visual-details"><div><dt>E-mail</dt><dd>{selected.email}</dd></div><div><dt>Função</dt><dd>{selected.role}</dd></div><div><dt>Turno</dt><dd>{selected.shift}</dd></div><div><dt>Status</dt><dd>{statuses[selected.status]}</dd></div><div><dt>Posto</dt><dd>{selected.location}</dd></div></dl>}
-    </Modal>
-    <Modal open={creating} onClose={() => setCreating(false)} title="Novo funcionário" description="Simulação temporária, sem criar usuário, senha ou acesso real." actions={<><Button variant="secondary" onClick={() => setCreating(false)}>Cancelar</Button><Button type="submit" form="employee-create">Adicionar à demonstração</Button></>}>
-      <form id="employee-create" ref={formRef} onSubmit={create} noValidate className="visual-form"><p className="visual-note">Campos com * são obrigatórios.</p><TextField name="name" error={errors.name} label="Nome completo" required maxLength={80} onChange={() => clear('name')} /><TextField name="email" error={errors.email} label="E-mail" type="email" required maxLength={120} onChange={() => clear('email')} /><SelectField name="role" label="Função" defaultValue="Repositor">{['Repositor', 'Caixa', 'Vendedor'].map((item) => <option key={item}>{item}</option>)}</SelectField></form>
+      <div className="employees__content"><div className="visual-toolbar"><TextField label="Buscar nome ou ID" type="search" icon={<Search size={18} />} value={query} onChange={e => { setQuery(e.target.value); setPage(1) }} />
+        <SelectField label="Função" value={role} onChange={e => { setRole(e.target.value); setPage(1) }}><option value="all">Todas as funções</option>{Object.entries(roles).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</SelectField></div>
+        <div className="employees__heading"><h2>Sua equipe</h2><p role="status">{filtered.length} funcionários encontrados</p></div>
+        <div className="employees__cards">{rows.map(p => <Card className="employee-card" key={p.id}><div className="employee-card__top"><span className="employee-card__avatar">{p.userName.split(/\s+/).slice(0, 2).map(s => s[0]).join('')}</span><UserRound aria-hidden="true" /></div>
+          <h3>{p.userName}</h3><p>{roles[p.position]}</p><small>ID {p.id}</small><footer><Button variant="ghost" onClick={() => open('details', p)}>Ver perfil de {p.userName}</Button>
+            <Button variant="secondary" disabled={p.position === 'MANAGER'} onClick={() => open('edit', p)}>Editar função de {p.userName}</Button><Button variant="ghost" disabled={p.position === 'MANAGER'} onClick={() => open('delete', p)}>Excluir funcionário {p.id}</Button></footer></Card>)}</div>
+        {!rows.length && <Feedback kind="empty" title="Nenhum funcionário encontrado" />}
+        <nav className="employees__pagination" aria-label="Paginação da equipe"><Button variant="secondary" disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)}>Anterior</Button><span aria-current="page">{currentPage}</span><Button variant="secondary" disabled={currentPage * 6 >= filtered.length} onClick={() => setPage(currentPage + 1)}>Próxima →</Button></nav>
+      </div></div>}
+    <Modal open={!!dialog} onClose={() => { if (!pending.current) setDialog(null) }} title={dialog?.action === 'create' ? 'Novo funcionário' : dialog?.action === 'edit' ? 'Editar função' : dialog?.action === 'delete' ? 'Excluir funcionário?' : person?.userName ?? 'Funcionário'}
+      actions={dialog?.action === 'details' ? <Button onClick={() => setDialog(null)}>Fechar</Button> : <><Button variant="secondary" disabled={busy} onClick={() => setDialog(null)}>Cancelar</Button>{dialog?.action === 'delete' ? <Button variant="danger" loading={busy} onClick={() => void submit()}>Confirmar exclusão</Button> : <Button type="submit" form="employee-api-form" loading={busy}>Salvar funcionário</Button>}</>}>
+      {failure && <p role="alert">{failure}</p>}
+      {dialog?.action === 'details' && person ? <dl className="visual-details"><div><dt>ID do funcionário</dt><dd>{person.id}</dd></div><div><dt>ID do usuário</dt><dd>{person.userId}</dd></div><div><dt>Função</dt><dd>{roles[person.position]}</dd></div></dl>
+        : dialog?.action === 'delete' ? <p>Excluir o vínculo de funcionário de {person?.userName}? O cadastro de usuário não é excluído por esta operação. Outros vínculos podem impedir a exclusão.</p> : dialog && <form key={`${dialog.action}-${person?.id ?? 'new'}`} id="employee-api-form" ref={formRef} className="visual-form" onSubmit={submit} noValidate>
+          {dialog.action === 'create' && <>{[['name', 'Nome completo', 'text'], ['email', 'E-mail', 'email'], ['cpf', 'CPF', 'text'], ['birthDate', 'Data de nascimento', 'date'], ['password', 'Senha inicial', 'password']].map(([name, label, type]) => <TextField key={name} name={name} label={label} type={type} required disabled={busy} autoComplete={name === 'password' ? 'new-password' : 'off'} error={errors[name]} onChange={() => clear(name)} />)}</>}
+          <SelectField name="position" label="Função" required disabled={busy} defaultValue={person?.position ?? 'STOCKER'} error={errors.position} onChange={() => clear('position')}><option value="STOCKER">Repositor</option><option value="CASHIER">Caixa</option></SelectField>
+        </form>}
     </Modal>
   </VisualPage>
 }

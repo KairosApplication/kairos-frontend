@@ -39,23 +39,19 @@ test('@a11y configurações identifica unidade e e-mail inválidos e nomeia o gr
   await expect(status).toHaveAttribute('data-updated', 'true')
 })
 
-test('@a11y funcionário informa e-mail duplicado no campo e permite cancelar pelo teclado', async ({ page }) => {
+test('@a11y funcionário valida campos obrigatórios e permite cancelar pelo teclado', async ({ page }) => {
   await page.goto('/funcionarios')
   const trigger = page.getByRole('button', { name: 'Novo funcionário', exact: true })
   await trigger.click()
   const dialog = page.getByRole('dialog', { name: 'Novo funcionário', exact: true })
-  await dialog.getByRole('textbox', { name: 'Nome completo' }).fill('Outra pessoa')
-  const email = dialog.getByRole('textbox', { name: 'E-mail', exact: true })
-  await email.fill('joao@kairos.example')
-  await dialog.getByRole('button', { name: 'Adicionar à demonstração' }).click()
-  await expect(email).toBeFocused()
-  await expect(email).toHaveAccessibleDescription('Este e-mail já está na demonstração.')
-  await email.fill('novo@kairos.example')
-  await expect(email).toBeFocused()
+  await dialog.getByRole('button', { name: 'Salvar funcionário' }).click()
+  const name = dialog.getByRole('textbox', { name: 'Nome completo' })
+  await expect(name).toBeFocused()
+  await expect(name).toHaveAccessibleDescription('Preencha este campo.')
+  await name.fill('Outra pessoa')
   await page.keyboard.press('Escape')
   await expect(trigger).toBeFocused()
 })
-
 test('@a11y reposição identifica quantidade inválida e oferece correção', async ({ page }) => {
   await page.goto('/reposicoes')
   await page.getByRole('button', { name: 'Criar reposição', exact: true }).click()
