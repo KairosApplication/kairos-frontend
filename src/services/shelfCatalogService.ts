@@ -1,34 +1,17 @@
-import { apiRequest, isRecord, readApiJson } from './apiClient'
-import { ApiHttpError, invalidApiData, parseApiList } from './apiData'
-import type { AisleDto, ProductShelfDto, ProductSummaryDto, SectorDto, ShelfDto } from '../types/shelfApi'
+import { apiRequest, isRecord } from './apiClient'
+import { ApiHttpError } from './apiData'
+import { getStoreCatalog } from './storeCatalogService'
+import type { ProductShelfDto, ShelfDto } from '../types/shelfApi'
 import type { ShelfCatalog, ShelfFieldErrors, ShelfInput } from '../types/shelfCatalog'
 
 const positive = (v: unknown): v is number => typeof v === 'number' && Number.isSafeInteger(v) && v > 0
-const quantity = (v: unknown): v is number => typeof v === 'number' && Number.isSafeInteger(v) && v >= 0
-const text = (v: unknown): v is string => typeof v === 'string' && v.trim().length > 0
-const sectorDto = (v: unknown): v is SectorDto => isRecord(v) && positive(v.id) && text(v.name)
-const aisleDto = (v: unknown): v is AisleDto => isRecord(v) && positive(v.id) && positive(v.sectorId) && text(v.sectorName) && positive(v.position)
 const shelfDto = (v: unknown): v is ShelfDto => isRecord(v) && positive(v.id) && positive(v.aisleId) && positive(v.aislePosition) && positive(v.maximumCapacity)
-const productDto = (v: unknown): v is ProductSummaryDto => isRecord(v) && positive(v.id) && text(v.name)
-const linkDto = (v: unknown): v is ProductShelfDto => isRecord(v) && positive(v.id) && positive(v.productId) && positive(v.shelfId) && quantity(v.productQuantity)
 
 export async function getShelfCatalog(signal?: AbortSignal): Promise<ShelfCatalog> {
-  const response = await apiRequest('/store-map', { signal })
-  if (response.status !== 200) throw new ApiHttpError(response.status)
-  const payload = await readApiJson(response)
-  if (!isRecord(payload)) invalidApiData()
-  const sectors = parseApiList(payload.sectors, sectorDto)
-  const aisles = parseApiList(payload.aisles, aisleDto)
-  const shelves = parseApiList(payload.shelves, shelfDto)
-  const products = parseApiList(payload.products, productDto)
-  const links = parseApiList(payload.productShelves, linkDto)
+  const { sectors, aisles, shelves, products, productShelves: links } = await getStoreCatalog(signal)
   const sectorById = new Map(sectors.map(s => [s.id, s]))
   const aisleById = new Map(aisles.map(a => [a.id, a]))
-  const shelfById = new Map(shelves.map(s => [s.id, s]))
   const productById = new Map(products.map(p => [p.id, p]))
-  if (aisles.some(a => !sectorById.has(a.sectorId)) || shelves.some(s => !aisleById.has(s.aisleId) || aisleById.get(s.aisleId)?.position !== s.aislePosition)
-    || links.some(l => !shelfById.has(l.shelfId) || !productById.has(l.productId))
-    || new Set(links.map(l => `${l.shelfId}:${l.productId}`)).size !== links.length) invalidApiData()
   const ordered = [...shelves].sort((a, b) => a.id - b.id)
   const linksByShelf = new Map<number, ProductShelfDto[]>()
   for (const link of links) linksByShelf.set(link.shelfId, [...(linksByShelf.get(link.shelfId) ?? []), link])
