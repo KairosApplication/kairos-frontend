@@ -19,7 +19,7 @@ export default function DeleteProduct({ product, onClose, onDelete }: Props) {
     }
   }
   return <Modal open initialFocusRef={cancel} onClose={() => { if (!pending.current) onClose() }} title={`Excluir produto ${product.id}?`}
-    description="Confirme a exclusão do produto antes de continuar."
+    description="A exclusão será gravada na sua empresa. Confirme antes de continuar."
     actions={<><Button ref={cancel} variant="secondary" disabled={deleting} onClick={onClose}>Cancelar</Button><Button variant="danger" disabled={blocked} loading={deleting} loadingLabel="Excluindo…" onClick={() => void confirm()}>Excluir produto</Button></>}>
     <p><strong>{product.name}</strong> · {product.brand}</p>
     <p>{blocked ? `Este produto está vinculado a ${product.placements.length} gôndola(s). Remova ou transfira os vínculos antes de excluir.` : 'Confirme a remoção deste produto do catálogo. Histórico de compras ou outros vínculos podem impedir a exclusão.'}</p>

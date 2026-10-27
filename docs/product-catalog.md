@@ -33,18 +33,19 @@ Os quatro indicadores, além do total, são exclusivos entre si. Saldo positivo 
 
 SKU, código de barras, ativo/inativo, estoque mínimo e quantidade no depósito não são retornados nesta consulta e não são fabricados. A API de inventário consultada fornece identificação/setor e verificação booleana de disponibilidade para uma quantidade solicitada; isso não revela a quantidade total disponível.
 
-Cadastro, edição e exclusão estão implementados com os endpoints de produtos da API. Importação, movimentação e vinculação de produtos continuam pendentes.
+Cadastro, edição e exclusão estão implementados com a [correção de empresa da API na PR #38](https://github.com/KairosApplication/kairos-springboot/pull/38). Importação, movimentação e vinculação de produtos continuam pendentes.
 
 ## Operações persistentes
 
 - Categorias do formulário vêm de `GET /api/v1/categories/list`, inclusive quando a empresa ainda não possui produtos. Essa classificação é compartilhada na API; os filtros da listagem continuam derivados do catálogo da empresa.
-- Cadastro: `POST /api/v1/products/registration`; edição: `PATCH /api/v1/products/update/{id}`; exclusão: `DELETE /api/v1/products/delete/{id}`.
+- Cadastro: `POST /api/v1/products/company/registration`; edição: `PATCH /api/v1/products/company/update/{id}`; exclusão: `DELETE /api/v1/products/company/delete/{id}`. Não há fallback para as rotas antigas: sem a correção da API, as novas rotas falham sem criar um produto órfão de empresa.
 - Nome, marca, categoria e preço são validados conforme o contrato. Preço aceita vírgula ou ponto com até duas casas, zero e no máximo 9999999999,99, sem separador de milhar. O JSON envia preço e ID da categoria como números. ID e empresa não são enviados pelo formulário.
+- A API atribui a empresa a partir do gerente autenticado; edição e exclusão validam a empresa antes de modificar o registro. Produtos legados sem empresa exigem correção no backend e não são adotados automaticamente.
 - Exclusão pede confirmação e é bloqueada quando há gôndolas vinculadas conhecidas. Outros vínculos existentes no banco podem resultar em conflito, exibido no diálogo.
 - Formulários preservam o rascunho em erros de validação/permissão, associam mensagens aos campos e focam o primeiro campo inválido. Durante a gravação, não é possível enviar novamente ou fechar o diálogo.
 - HTTP 201/200/204 confirma a gravação, mesmo se o corpo da resposta for ilegível. Após confirmar, o catálogo é consultado novamente; falha nessa leitura não repete a gravação. Sem confirmação por falha de rede/5xx, o diálogo fecha e novas gravações ficam indisponíveis até uma consulta manual. HTTP 401 solicita revalidação da sessão; 403 preserva a sessão e mostra a falta de permissão.
 
-A leitura do catálogo utiliza `/api/v1/store-map`, conforme descrito acima.
+Aplicar as correções do backend (`fix/map-list-query-performance` para leitura e `fix/product-company-mutations` para gravação) antes de liberar as operações. Nenhuma migração ou preenchimento de empresa em dados existentes faz parte desta entrega.
 
 ## Verificação
 

@@ -8,7 +8,7 @@ Referência atual: API main `27c15b6`, que já inclui JWT. Mapa e gôndolas requ
 
 1. **Autenticação e identidade entregues pelas PRs #51 e #52:** JWT por cookies, cliente HTTP compartilhado, CSRF, tratamento de expiração e perfil com dados disponíveis da sessão. Renovação automática pertence ao backend. Nome e empresa reais dependem da ampliação do contrato de identidade (ver `visual-profile.md`).
 2. **Gôndolas e mapa — frontend #53 mergeado:** consulta do catálogo por empresa, IDs reais, mapa esquemático e CRUD persistente. A API requer a PR #37, ainda aberta na verificação desta etapa. Ver `shelf-management.md` e `store-map.md` para limites e confirmação de gravações.
-3. **Produtos — consulta entregue na #54; PR atual de operações:** cadastro, edição e exclusão com confirmação, validações, categorias reais e recarga do catálogo. Quantidade no depósito, movimentação e vinculação ainda dependem de entregas próprias. Ver `product-catalog.md`.
+3. **Produtos — consulta entregue na #54; PR atual de operações:** cadastro, edição e exclusão com confirmação, validações, categorias reais e recarga do catálogo. Requer também a correção de empresa na API (`fix/product-company-mutations`), em PR dedicada. Quantidade no depósito, movimentação e vinculação ainda dependem de entregas próprias. Ver `product-catalog.md`.
 4. Reposição e funcionários: PRs dedicadas para tarefas, responsáveis, equipe e operações disponíveis.
 5. Vendas, Dashboard e Insights: mapear dados existentes, períodos e cálculos; registrar os indicadores sem fonte disponível. PRs por módulo.
 6. Perfil, configurações e IA: conectar somente capacidades reais da API. Recursos sem endpoint permanecem explicitamente pendentes.

@@ -38,13 +38,13 @@ export default function ProductForm({ product, onClose, onSave }: Props) {
     }
   }
   return <Modal open initialFocusRef={name} onClose={() => { if (!pending.current) onClose() }}
-    title={product ? `Editar produto ${product.id}` : 'Novo produto'} description="Confira os dados do produto antes de salvar."
+    title={product ? `Editar produto ${product.id}` : 'Novo produto'} description="Confirme os dados. As alterações serão gravadas na sua empresa."
     actions={<><Button variant="secondary" disabled={saving} onClick={onClose}>Cancelar</Button><Button type="submit" form={formId} disabled={!categories?.length} loading={saving} loadingLabel="Salvando…">{product ? 'Salvar alterações' : 'Criar produto'}</Button></>}>
     {categoryError ? <Feedback kind="error" title="Não foi possível carregar as categorias." description={categoryError.message} onRetry={() => void reload()} />
       : !categories ? <Feedback kind="loading" title="Carregando categorias…" />
         : !categories.length ? <Feedback kind="empty" title="Nenhuma categoria disponível" description="Solicite o cadastro de uma categoria para continuar." /> : null}
     <form id={formId} ref={form} onSubmit={submit} noValidate className="products__form">
-      <p className="products__data-note">Campos com * são obrigatórios. O ID é gerado no cadastro.</p>
+      <p className="products__data-note">Campos com * são obrigatórios. O ID e a empresa são definidos no cadastro.</p>
       {product && <TextField label="ID do produto" value={product.id} readOnly />}
       <TextField ref={name} label="Nome do produto" required autoComplete="off" maxLength={100} disabled={saving || !categories?.length} value={input.name} error={fields.name} onChange={event => change('name', event.target.value)} />
       <TextField label="Marca" required autoComplete="off" maxLength={255} disabled={saving || !categories?.length} value={input.brand} error={fields.brand} onChange={event => change('brand', event.target.value)} />
