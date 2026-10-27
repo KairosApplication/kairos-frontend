@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test'
 import { managerPages } from '../src/routes/managerPages'
 import { handleShelfFixture, makeShelfApiFixture } from '../src/test/shelvesApiFixture'
+import { handleChat, makeChatFixture } from '../src/test/assistantApiFixture'
 
 export const panelPages = managerPages
 
@@ -8,6 +9,7 @@ export const panelPages = managerPages
 export async function mockSession(page: Page, authenticated = true) {
   let signedIn = authenticated
   const db = makeShelfApiFixture()
+  const chat = makeChatFixture()
   await page.route('**/api/v1/**', async (route) => {
     const request = route.request()
     const path = new URL(request.url()).pathname
@@ -30,7 +32,8 @@ export async function mockSession(page: Page, authenticated = true) {
     }
     if (path === '/api/v1/auth/logout') { signedIn = false; await route.fulfill({ status: 204, headers }); return }
     if (!signedIn) { await route.fulfill({ status: 401, headers }); return }
-    const data = handleShelfFixture(db, request.method(), path.replace('/api/v1', ''), request.postData() ? request.postDataJSON() : undefined)
+    const body = request.postData() ? request.postDataJSON() : undefined
+    const data = handleChat(chat, request.method(), path, body) ?? handleShelfFixture(db, request.method(), path.replace('/api/v1', ''), body)
     if (data) {
       await route.fulfill({ status: data.status, headers, ...(data.json === undefined ? {} : { json: data.json }) }); return
     }
