@@ -4,6 +4,8 @@ Atualizado em 27/10/2026, incluindo a correção da consulta do mapa por empresa
 
 ## Etapa atual — Integração real e entrega
 
+Rodada final preparada em PRs independentes #55 a #62, além da PR de alertas/documentação. A [matriz de entrega](integration-delivery.md) registra o estado desta rodada e os contratos efetivamente usados. A sequência abaixo preserva o planejamento original, sem afirmar que essas PRs já foram mergeadas.
+
 Referência atual: API main `27c15b6`, que já inclui JWT. Mapa e gôndolas requerem também a correção `fix/map-list-query-performance`, com consulta do catálogo por empresa em `/api/v1/store-map`. A referência anterior `28c73d8` usava as mesmas regras de login, mas combinava listagens globais, inadequadas para o volume real.
 
 1. **Autenticação e identidade entregues pelas PRs #51 e #52:** JWT por cookies, cliente HTTP compartilhado, CSRF, tratamento de expiração e perfil com dados disponíveis da sessão. Renovação automática pertence ao backend. Nome e empresa reais dependem da ampliação do contrato de identidade (ver `visual-profile.md`).

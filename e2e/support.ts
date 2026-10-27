@@ -30,6 +30,7 @@ export async function mockSession(page: Page, authenticated = true) {
     }
     if (path === '/api/v1/auth/logout') { signedIn = false; await route.fulfill({ status: 204, headers }); return }
     if (!signedIn) { await route.fulfill({ status: 401, headers }); return }
+    if (path === '/api/v1/alerts/list' && request.method() === 'GET') { await route.fulfill({ headers, json: [{ id: 1, shelfId: 101, productId: 1, description: 'Produto sem saldo na gôndola 101', status: 'OPEN', stockoutDate: '2026-10-27' }] }); return }
     const data = handleShelfFixture(db, request.method(), path.replace('/api/v1', ''), request.postData() ? request.postDataJSON() : undefined)
     if (data) {
       await route.fulfill({ status: data.status, headers, ...(data.json === undefined ? {} : { json: data.json }) }); return
