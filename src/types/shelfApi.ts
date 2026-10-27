@@ -1,4 +1,4 @@
-/** Campos consumidos dos DTOs da API local JWT 28c73d8. */
+/** Campos dos DTOs do catálogo por empresa retornado por GET /api/v1/store-map. */
 export type SectorDto = { id: number; name: string }
 export type AisleDto = { id: number; sectorId: number; sectorName: string; position: number }
 // aislePosition é a posição DO CORREDOR no mapper do backend, não da gôndola.

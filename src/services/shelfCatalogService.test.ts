@@ -10,6 +10,8 @@ afterEach(() => { vi.unstubAllGlobals() })
 
 it('joins the five real contracts, preserves IDs and distinguishes zero from missing product links', async () => {
   const catalog = await getShelfCatalog()
+  expect(api.fetch).toHaveBeenCalledTimes(1)
+  expect(String(api.fetch.mock.calls[0][0])).toMatch(/\/api\/v1\/store-map$/)
   expect(catalog.shelves).toHaveLength(8)
   expect(catalog.aisles.filter(a => a.sectorId === '1')).toHaveLength(2)
   expect(catalog.shelves[0]).toMatchObject({ id: '101', aisleId: '11', productCount: 2, status: 'stockout', stockoutCount: 1, maximumCapacity: 100 })
@@ -84,6 +86,6 @@ it.each(['network', 'server'])('requires a fresh read after an uncertain %s resp
 })
 
 it('reports a resource authorization failure from any list', async () => {
-  api.fetch.mockImplementation(async (input, init) => String(input).endsWith('/product-shelves/list') ? new Response(null, { status: 403 }) : api.respond(input, init))
+  api.fetch.mockImplementation(async (input, init) => String(input).endsWith('/store-map') ? new Response(null, { status: 403 }) : api.respond(input, init))
   await expect(getShelfCatalog()).rejects.toBeInstanceOf(ApiHttpError)
 })

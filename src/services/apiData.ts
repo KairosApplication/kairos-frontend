@@ -16,7 +16,9 @@ export function invalidApiData(): never { throw new Error('A loja retornou dados
 export async function readApiList<T extends { id: number }>(path: `/${string}`, valid: (value: unknown) => value is T, signal?: AbortSignal): Promise<T[]> {
   const response = await apiRequest(path, { signal })
   if (response.status !== 200) throw new ApiHttpError(response.status)
-  const data = await readApiJson(response)
+  return parseApiList(await readApiJson(response), valid)
+}
+export function parseApiList<T extends { id: number }>(data: unknown, valid: (value: unknown) => value is T): T[] {
   if (!Array.isArray(data) || !data.every(valid) || new Set(data.map(item => item.id)).size !== data.length) invalidApiData()
   return data
 }

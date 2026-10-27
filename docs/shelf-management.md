@@ -1,6 +1,6 @@
 # Gestão de Gôndolas — integração com a API
 
-A rota protegida `/gondolas` consulta e altera o cadastro real. Referência: backend local JWT `kairos-springboot`, commit `28c73d8`. A origem é `VITE_API_BASE_URL` no `.env.local` do frontend; as chamadas passam pelo cliente compartilhado com cookies e CSRF. Não há fallback para dados demonstrativos.
+A rota protegida `/gondolas` consulta e altera o cadastro real. Requer a API JWT com `GET /api/v1/store-map` (branch de correção `fix/map-list-query-performance`, baseada na main `27c15b6`). A origem é `VITE_API_BASE_URL` no `.env.local` do frontend; as chamadas passam pelo cliente compartilhado com cookies e CSRF. Não há fallback para dados demonstrativos.
 
 ## Contratos utilizados
 
@@ -8,16 +8,14 @@ Todos os caminhos abaixo são relativos a `/api/v1`.
 
 | Operação | Endpoint | Dados consumidos/enviados |
 | --- | --- | --- |
-| Setores | `GET /sectors/list` | `id`, `name` |
-| Corredores | `GET /aisles/list` | `id`, `sectorId`, `sectorName`, `position` |
-| Gôndolas | `GET /shelves/list` | `id`, `aisleId`, `aislePosition`, `maximumCapacity` |
-| Produtos | `GET /products/list` | `id`, `name` |
-| Vínculos e saldo | `GET /product-shelves/list` | `id`, `productId`, `shelfId`, `productQuantity` |
+| Consulta da empresa | `GET /store-map` | Objeto com `sectors`, `aisles`, `shelves`, `products`, `productShelves` |
 | Cadastro | `POST /shelves/registration` | `{ aisleId: number, maximumCapacity: number }` → 201 |
 | Edição | `PATCH /shelves/update/{id}` | Mesmo corpo do cadastro → 200 |
 | Exclusão | `DELETE /shelves/delete/{id}` | Sem corpo → 204 |
 
-Os DTOs estão em `src/types/shelfApi.ts`. O service valida respostas, IDs únicos, referências e quantidades antes de adaptar os dados aos tipos de apresentação. Respostas incompatíveis exibem erro em vez de valores inventados.
+As listas usam os DTOs existentes: setores (`id`, `name`), corredores (`id`, `sectorId`, `sectorName`, `position`), gôndolas (`id`, `aisleId`, `aislePosition`, `maximumCapacity`), produtos (`id`, `name`) e vínculos (`id`, `productId`, `shelfId`, `productQuantity`). O service valida respostas, IDs únicos, referências e quantidades antes de adaptar os dados aos tipos de apresentação.
+
+A empresa é determinada pela API a partir do funcionário autenticado, não por um ID enviado pelo navegador. Conta sem funcionário/empresa recebe 403. A consulta evita baixar o catálogo global: a reprodução encontrou 50 mil gôndolas e 80 mil produtos; a consulta da empresa de teste retornou 500 e 800, respectivamente, em cerca de três segundos. As cinco listagens globais não são usadas como fallback.
 
 ## Comportamento
 

@@ -17,6 +17,7 @@ export function makeShelfApiFixture(): ShelfApiFixture {
 }
 // Simulador de HTTP exclusivo dos testes; nunca é importado pelos services de produção.
 export function handleShelfFixture(db: ShelfApiFixture, method: string, path: string, body?: unknown): { status: number; json?: unknown } | null {
+  if (method === 'GET' && path === '/store-map') return { status: 200, json: { sectors: db.sectors, aisles: db.aisles, shelves: db.shelves, products: db.products, productShelves: db.links } }
   const lists: Record<string, unknown> = { '/sectors/list': db.sectors, '/aisles/list': db.aisles, '/shelves/list': db.shelves, '/products/list': db.products, '/product-shelves/list': db.links }
   if (method === 'GET' && path in lists) return { status: 200, json: lists[path] }
   const id = Number(path.split('/').at(-1))

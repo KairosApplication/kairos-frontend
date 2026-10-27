@@ -106,7 +106,7 @@ it('keeps confirmed success when refreshing fails, and retries only reads', asyn
   await setup()
   let written = false
   api.fetch.mockImplementation(async (input, init) => {
-    if (written && String(input).endsWith('/shelves/list')) return new Response(null, { status: 503 })
+    if (written && String(input).endsWith('/store-map')) return new Response(null, { status: 503 })
     const result = await api.respond(input, init)
     if (init?.method === 'POST') written = true
     return result

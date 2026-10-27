@@ -1,5 +1,5 @@
-import { apiRequest, isRecord } from './apiClient'
-import { ApiHttpError, invalidApiData, readApiList } from './apiData'
+import { apiRequest, isRecord, readApiJson } from './apiClient'
+import { ApiHttpError, invalidApiData, parseApiList } from './apiData'
 import type { AisleDto, ProductShelfDto, ProductSummaryDto, SectorDto, ShelfDto } from '../types/shelfApi'
 import type { ShelfCatalog, ShelfFieldErrors, ShelfInput } from '../types/shelfCatalog'
 
@@ -13,11 +13,15 @@ const productDto = (v: unknown): v is ProductSummaryDto => isRecord(v) && positi
 const linkDto = (v: unknown): v is ProductShelfDto => isRecord(v) && positive(v.id) && positive(v.productId) && positive(v.shelfId) && quantity(v.productQuantity)
 
 export async function getShelfCatalog(signal?: AbortSignal): Promise<ShelfCatalog> {
-  const [sectors, aisles, shelves, products, links] = await Promise.all([
-    readApiList('/sectors/list', sectorDto, signal), readApiList('/aisles/list', aisleDto, signal),
-    readApiList('/shelves/list', shelfDto, signal), readApiList('/products/list', productDto, signal),
-    readApiList('/product-shelves/list', linkDto, signal),
-  ])
+  const response = await apiRequest('/store-map', { signal })
+  if (response.status !== 200) throw new ApiHttpError(response.status)
+  const payload = await readApiJson(response)
+  if (!isRecord(payload)) invalidApiData()
+  const sectors = parseApiList(payload.sectors, sectorDto)
+  const aisles = parseApiList(payload.aisles, aisleDto)
+  const shelves = parseApiList(payload.shelves, shelfDto)
+  const products = parseApiList(payload.products, productDto)
+  const links = parseApiList(payload.productShelves, linkDto)
   const sectorById = new Map(sectors.map(s => [s.id, s]))
   const aisleById = new Map(aisles.map(a => [a.id, a]))
   const shelfById = new Map(shelves.map(s => [s.id, s]))

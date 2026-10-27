@@ -43,7 +43,7 @@ test('keeps confirmed success after a failed read; retry never repeats POST', as
   await page.goto('/gondolas')
   await page.getByRole('button', { name: 'Nova gôndola', exact: true }).click()
   await page.getByRole('spinbutton', { name: 'Capacidade máxima' }).fill('80')
-  await page.route('**/api/v1/shelves/list', async route => {
+  await page.route('**/api/v1/store-map', async route => {
     if (route.request().method() === 'OPTIONS') { await route.fallback(); return }
     await route.fulfill({ status: 503, headers: { 'Access-Control-Allow-Origin': 'http://127.0.0.1:4175', 'Access-Control-Allow-Credentials': 'true' }, json: {} })
   })
@@ -53,7 +53,7 @@ test('keeps confirmed success after a failed read; retry never repeats POST', as
   await expect(page.getByText('Gôndola 109 criada com sucesso.')).toBeVisible()
   await expect(page.getByRole('alert')).toContainText('Não foi possível carregar as gôndolas.')
   await expect(page.getByRole('dialog')).toHaveCount(0)
-  await page.unroute('**/api/v1/shelves/list')
+  await page.unroute('**/api/v1/store-map')
   await page.getByRole('button', { name: 'Tentar novamente' }).click()
   await expect(page.getByRole('region', { name: 'Gôndolas cadastradas' })).toContainText('9')
   expect(posts).toBe(1)
