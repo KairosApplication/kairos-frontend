@@ -1,6 +1,6 @@
 import type { RestockingRecord } from '../services/restockingApiService'
 export function makeRestockingFixture() { return {
-  people: [{ id: 1, userName: 'João Silva', position: 'STOCKER' }, { id: 2, userName: 'Ana Gerente', position: 'MANAGER' }],
+  people: [{ id: 1, userName: 'João Silva', position: 'stocker' }, { id: 2, userName: 'Ana Gerente', position: 'manager' }],
   inventories: [{ id: 1, sectorId: 1, sectorName: 'Bebidas' }],
   records: [{ id: 1, inventoryId: 1, employeeId: 1, shelfId: 101, productId: 1, restockingDate: '2026-10-27T10:00:00', restockedQuantity: 12, damagedQuantity: 0 }, { id: 2, inventoryId: 1, employeeId: 2, shelfId: 102, productId: 2, restockingDate: '2026-10-26T11:00:00', restockedQuantity: 20, damagedQuantity: 2 }] as RestockingRecord[],
 } }

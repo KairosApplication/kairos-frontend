@@ -15,10 +15,10 @@ async function list<T extends { id: number }>(path: `/${string}`, guard: (v: unk
 export async function getRestockingCatalog(signal?: AbortSignal) {
   const [catalog, records, people, inventories] = await Promise.all([
     getStoreCatalog(signal), list('/restockings/list', record, signal),
-    list<Person>('/employees/list', (v): v is Person => isRecord(v) && id(v.id) && typeof v.userName === 'string' && !!v.userName.trim() && ['MANAGER', 'STOCKER', 'CASHIER'].includes(String(v.position)), signal),
+    list<Person>('/employees/list', (v): v is Person => isRecord(v) && id(v.id) && typeof v.userName === 'string' && !!v.userName.trim() && typeof v.position === 'string' && ['MANAGER', 'STOCKER', 'CASHIER'].includes(v.position.toUpperCase()), signal),
     list<Inventory>('/inventories/list', (v): v is Inventory => isRecord(v) && id(v.id) && id(v.sectorId) && typeof v.sectorName === 'string' && !!v.sectorName.trim(), signal),
   ])
-  return { catalog, records: records.sort((a, b) => b.restockingDate.localeCompare(a.restockingDate) || b.id - a.id), people: people.filter(p => p.position === 'STOCKER' || p.position === 'MANAGER'), inventories: inventories.filter(i => catalog.sectors.some(s => s.id === i.sectorId)) }
+  return { catalog, records: records.sort((a, b) => b.restockingDate.localeCompare(a.restockingDate) || b.id - a.id), people: people.filter(p => ['STOCKER', 'MANAGER'].includes(p.position.toUpperCase())), inventories: inventories.filter(i => catalog.sectors.some(s => s.id === i.sectorId)) }
 }
 export class RestockingUncertainError extends Error { constructor() { super('Não foi possível confirmar a alteração. Consulte as reposições antes de tentar novamente.') } }
 export async function writeRestocking(method: 'POST' | 'PATCH' | 'DELETE', body?: Omit<RestockingRecord, 'id' | 'restockingDate'>, recordId?: number) {
