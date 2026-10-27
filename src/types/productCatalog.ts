@@ -1,24 +1,13 @@
-/** Tipos de apresentação da demonstração, independentes do contrato da API. */
-export type ProductAvailability = 'available' | 'low' | 'stockout' | 'inactive'
+export type ProductAvailability = 'stocked' | 'partial' | 'zero' | 'unlinked'
 export type ProductCategory = { id: string; name: string }
+export type ProductPlacement = { shelfId: string; units: number; location: string; sectorName: string }
 export type CatalogProduct = {
   id: string
   name: string
-  sku: string
-  barcode: string
+  brand: string
   categoryId: string
   price: number
-  active: boolean
-  shelfUnits: number
-  warehouseUnits: number
-  minimumShelfUnits: number
-  sourceShelfId: string
+  shelfUnits: number | null
+  placements: ProductPlacement[]
 }
-export type ProductCatalog = {
-  store: string
-  unit: string
-  updatedAt: string
-  categories: ProductCategory[]
-  products: CatalogProduct[]
-  shelfCodes: Record<string, string>
-}
+export type ProductCatalog = { updatedAt: string; categories: ProductCategory[]; products: CatalogProduct[] }

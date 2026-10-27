@@ -1,6 +1,7 @@
-import type { AisleDto, ProductShelfDto, ProductSummaryDto, SectorDto, ShelfDto } from '../types/shelfApi'
+import type { AisleDto, ProductShelfDto, SectorDto, ShelfDto } from '../types/shelfApi'
+import type { ProductDto } from '../types/storeCatalogApi'
 
-export type ShelfApiFixture = { sectors: SectorDto[]; aisles: AisleDto[]; shelves: ShelfDto[]; products: ProductSummaryDto[]; links: ProductShelfDto[] }
+export type ShelfApiFixture = { sectors: SectorDto[]; aisles: AisleDto[]; shelves: ShelfDto[]; products: ProductDto[]; links: ProductShelfDto[] }
 export function makeShelfApiFixture(): ShelfApiFixture {
   return {
     sectors: [{ id: 1, name: 'Bebidas' }, { id: 2, name: 'Mercearia' }],
@@ -11,9 +12,26 @@ export function makeShelfApiFixture(): ShelfApiFixture {
       { id: 105, aisleId: 21, aislePosition: 3, maximumCapacity: 50 }, { id: 106, aisleId: 21, aislePosition: 3, maximumCapacity: 60 },
       { id: 107, aisleId: 12, aislePosition: 2, maximumCapacity: 70 }, { id: 108, aisleId: 21, aislePosition: 3, maximumCapacity: 80 },
     ],
-    products: [{ id: 1, name: 'Coca-Cola 2 L' }, { id: 2, name: 'Água mineral 500 ml' }, { id: 3, name: 'Arroz branco 5 kg' }],
+    products: [
+      { id: 1, name: 'Coca-Cola 2 L', brand: 'Coca-Cola', price: 9.49, category: { id: 1, category: 'Bebidas' } },
+      { id: 2, name: 'Água mineral 500 ml', brand: 'Fonte Clara', price: 2.99, category: { id: 1, category: 'Bebidas' } },
+      { id: 3, name: 'Arroz branco 5 kg', brand: 'Boa Safra', price: 24.9, category: { id: 2, category: 'Mercearia' } },
+    ],
     links: [{ id: 1, shelfId: 101, productId: 1, productQuantity: 0 }, { id: 2, shelfId: 101, productId: 2, productQuantity: 4 }, { id: 3, shelfId: 102, productId: 2, productQuantity: 10 }, { id: 4, shelfId: 104, productId: 3, productQuantity: 20 }],
   }
+}
+export function addProductCatalogCases(db: ShelfApiFixture) {
+  db.products.push(
+    { id: 4, name: 'Escova dental', brand: 'Sorriso', price: 0, category: { id: 3, category: 'Higiene' } },
+    { id: 5, name: 'Sabonete 90 g', brand: 'Puro', price: 2.49, category: { id: 3, category: 'Higiene' } },
+    { id: 6, name: 'Suco de uva 1 L', brand: 'Vale', price: 8.99, category: { id: 1, category: 'Bebidas' } },
+    { id: 7, name: 'Café tradicional 500 g', brand: 'Origem', price: 18.9, category: { id: 2, category: 'Mercearia' } },
+  )
+  db.links.push(
+    { id: 5, shelfId: 105, productId: 5, productQuantity: 0 },
+    { id: 6, shelfId: 106, productId: 5, productQuantity: 2 },
+    { id: 7, shelfId: 107, productId: 6, productQuantity: 3 },
+  )
 }
 // Simulador de HTTP exclusivo dos testes; nunca é importado pelos services de produção.
 export function handleShelfFixture(db: ShelfApiFixture, method: string, path: string, body?: unknown): { status: number; json?: unknown } | null {
