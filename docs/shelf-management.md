@@ -1,35 +1,40 @@
-# Gestão de Gôndolas
+# Gestão de Gôndolas — integração com a API
 
-A rota protegida `/gondolas` implementa a listagem da captura Web (new), frame `574:518`: quatro indicadores, busca, filtros, tabela e paginação com seis registros por página.
+A rota protegida `/gondolas` consulta e altera o cadastro real. Requer a API JWT com `GET /api/v1/store-map` (branch de correção `fix/map-list-query-performance`, baseada na main `27c15b6`). A origem é `VITE_API_BASE_URL` no `.env.local` do frontend; as chamadas passam pelo cliente compartilhado com cookies e CSRF. Não há fallback para dados demonstrativos.
 
-## Escopo
+## Contratos utilizados
 
-- Busca por código, setor ou nome dos produtos disponíveis na demonstração, ignorando acentos, maiúsculas e espaços nas extremidades.
-- Filtros combinados de setor e situação. Alterar qualquer filtro retorna à primeira página.
-- Indicadores calculados para a loja inteira, preservando os mesmos dados e situações do mapa: 24 gôndolas, 3 com rupturas, 4 com estoque baixo e 17 abastecidas; 8 produtos sem exposição.
-- Contador dos resultados filtrados e botões Anterior/Próxima limitados às páginas existentes.
-- Estado vazio com limpeza de filtros, carregamento e erro com nova tentativa.
-- Link geral ao mapa e ação por linha que abre `/mapa?gondola=CODIGO` com a gôndola selecionada.
+Todos os caminhos abaixo são relativos a `/api/v1`.
 
-## Fonte e limites
+| Operação | Endpoint | Dados consumidos/enviados |
+| --- | --- | --- |
+| Consulta da empresa | `GET /store-map` | Objeto com `sectors`, `aisles`, `shelves`, `products`, `productShelves` |
+| Cadastro | `POST /shelves/registration` | `{ aisleId: number, maximumCapacity: number }` → 201 |
+| Edição | `PATCH /shelves/update/{id}` | Mesmo corpo do cadastro → 200 |
+| Exclusão | `DELETE /shelves/delete/{id}` | Sem corpo → 204 |
 
-Os modelos em `src/types/shelfCatalog.ts` são tipos de apresentação temporários, sem impor contrato à API. `getShelfCatalog` retorna uma cópia do estado demonstrativo compartilhado com o mapa, sem rede, persistência ou escrita no banco. O rodapé identifica a origem ilustrativa. Alterações em memória duram durante a navegação e são descartadas ao recarregar.
+As listas usam os DTOs existentes: setores (`id`, `name`), corredores (`id`, `sectorId`, `sectorName`, `position`), gôndolas (`id`, `aisleId`, `aislePosition`, `maximumCapacity`), produtos (`id`, `name`) e vínculos (`id`, `productId`, `shelfId`, `productQuantity`). O service valida respostas, IDs únicos, referências e quantidades antes de adaptar os dados aos tipos de apresentação.
 
-As situações vêm de `storeMapDemo`. Os seis registros iniciais e suas quantidades seguem a captura; os demais registros têm quantidades ilustrativas. A busca por nome de produto usa apenas os produtos demonstrativos preenchidos para A12, sem representar o catálogo completo.
+A empresa é determinada pela API a partir do funcionário autenticado, não por um ID enviado pelo navegador. Conta sem funcionário/empresa recebe 403. A consulta evita baixar o catálogo global: a reprodução encontrou 50 mil gôndolas e 80 mil produtos; a consulta da empresa de teste retornou 500 e 800, respectivamente, em cerca de três segundos. As cinco listagens globais não são usadas como fallback.
 
-Cadastro, edição e exclusão estão disponíveis em modais, além da consulta no mapa. Header e Sidebar existentes são preservados.
+## Comportamento
 
-## Operações demonstrativas
+- ID numérico gerado pela API, sem renomear para os códigos ilustrativos A12/B11. O formulário oferece corredor existente e capacidade máxima inteira positiva, até o limite de `Integer` do backend.
+- Busca por ID, setor, corredor ou produto, sem distinguir acentos/maiúsculas; filtros combinados, seis registros por página e seleção contextual no mapa.
+- Indicadores derivados dos registros retornados: total, gôndolas com algum produto vinculado com quantidade zero, soma das capacidades e gôndolas cujos produtos vinculados têm saldo positivo.
+- **Sem produtos:** nenhum vínculo. **Com saldo zero:** pelo menos um vínculo com quantidade zero. **Com saldo:** todos os vínculos com quantidade positiva. Saldo positivo não comprova abastecimento adequado; não há estoque mínimo nesse contrato.
+- A quantidade de produtos representa os vínculos distintos, não a soma das unidades. O horário no rodapé é o da consulta no navegador, sem representar uma análise do backend.
+- Cadastro/edição/exclusão persistem na API. Gôndolas com produtos conhecidos não podem ser excluídas pela interface. Outros impedimentos, incluindo vínculos não consultados aqui, continuam sob validação do servidor.
+- Os modais preservam campos em erros de validação, associam mensagens aos campos, impedem envio duplo/fechamento durante a solicitação e restauram foco ao terminar. Falhas 403 não desconectam a conta; 401 solicita revalidação da sessão.
 
-- **Nova gôndola:** código único, setor existente e localização obrigatória. Os códigos são normalizados em maiúsculas; a validação temporária aceita até 12 letras, números ou hífen. Essa regra de apresentação deve ser reconciliada com o backend antes da integração.
-- **Editar:** permite alterar código, setor e localização, preservando produtos, quantidades e situação de estoque. Após salvar, os filtros são limpos; os indicadores são recalculados.
-- **Excluir:** exige confirmação, com foco inicial em Cancelar. Nesta demonstração, gôndolas com produtos vinculados não podem ser removidas; a mensagem explica o impedimento. O fluxo de transferência/vinculação de produtos ainda está pendente.
-- Novas gôndolas começam com zero produtos e situação **Sem produtos**. Não são contabilizadas como abastecidas. O mapa apresenta essa situação na legenda quando houver registros correspondentes.
-- O mapa usa o mesmo estado de cadastro, mantém posições livres por setor e acompanha renomeação, mudança de setor e exclusão de gôndolas vazias. O código completo fica disponível no painel de detalhes e no nome acessível quando precisar ser abreviado visualmente no mapa.
-- Envio duplo e fechamento dos modais são bloqueados durante a operação. Erros preservam a entrada e permitem nova tentativa. Sucesso é anunciado e o foco retorna a Nova gôndola; cancelamento retorna ao botão de origem.
+## Confirmação de gravações
 
-## Verificação
+O status esperado confirma a operação mesmo se o corpo não trouxer um DTO utilizável. A listagem é consultada separadamente. Se essa releitura falhar, o sucesso permanece visível e **Tentar novamente** repete somente a consulta.
 
-Validação: `npm run lint`, `npm run test` e `npm run build`. Os 76 testes do projeto incluem indicadores, paginação, filtros, nova tentativa, validação e duplicatas, criação/edição/exclusão, cancelamento, operação pendente, falha sem perda de entrada e sincronização dos dados com o mapa.
+Em perda de conexão, timeout, erro 5xx ou confirmação inesperada após iniciar a escrita, o resultado pode ser incerto. O modal fecha, os dados antigos deixam de permitir novas operações e a mensagem solicita uma consulta antes de tentar outra gravação. Nenhuma escrita é repetida automaticamente.
 
-A revisão inicial da listagem conferiu 1440 × 1000, alinhamento das setas e rolagem própria da tabela em telas menores. A revisão adicional no Chrome percorreu criação, consulta no mapa, edição, exclusão vazia, impedimento de exclusão ocupada, Escape, retorno de foco e restauração dos exemplos ao recarregar. Os formulários foram conferidos em 390 e 320px, com sessão simulada somente no navegador de teste.
+## Limites e verificação
+
+Cadastro de setores/corredores e vinculação/transferência de produtos pertencem a etapas posteriores. O módulo de Produtos continua demonstrativo e não fornece links fictícios para o mapa real.
+
+Verificar com `npm run lint`, `npm run test`, `npm run build` e `npm run test:browser`. Os testes usam simulador HTTP exclusivo de `src/test`, cobrindo contratos, CRUD, validação, conflitos, confirmação perdida, falha de releitura, filtros, paginação, teclado e recarga. Nenhuma escrita de negócio é feita no banco real pelos testes.

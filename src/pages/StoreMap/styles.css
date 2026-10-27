@@ -11,6 +11,8 @@
 .store-map__floor { padding: 20px 34px 16px; border: 1px solid var(--color-border); border-radius: 16px; background: #f7f9f7; }
 .store-map__stockroom { margin: 0 0 18px; color: var(--color-text-muted); font-size: 11px; font-weight: 600; text-align: center; text-transform: uppercase; }
 .store-map__sectors { display: grid; gap: 48px; }
+.store-map__scroll { overflow-x: auto; padding: 4px; }
+.store-map__note { color: var(--color-text-muted); font-size: 12px; line-height: 1.7; }
 .store-map__sector { min-width: 0; }
 .store-map__sector h3 { margin: 0 0 14px; font-size: 11px; font-weight: 600; }
 .store-map__shelves { display: grid; grid-template-rows: repeat(6, minmax(50px, auto)); gap: 8px; }

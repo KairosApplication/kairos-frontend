@@ -1,13 +1,13 @@
 # Planejamento KAIROS Web — gerente
 
-Atualizado em 22/10/2026 após os merges de cobertura visual, acessibilidade (#42–45) e dependências (#46–50). As semanas abaixo registram a sequência original; a execução atual está na integração final. Não há datas de entrega confirmadas.
+Atualizado em 27/10/2026, incluindo a correção da consulta do mapa por empresa. Autenticação JWT (#51) e identidade do perfil (#52) já foram mergeadas. As semanas abaixo registram a sequência original; a execução atual está na integração final. Não há datas de entrega confirmadas.
 
 ## Etapa atual — Integração real e entrega
 
-Referência escolhida: API local JWT no commit `28c73d8`. A main oficial `f27c5b2` tem outro contrato de autenticação; não misturar versões durante a implementação.
+Referência atual: API main `27c15b6`, que já inclui JWT. Mapa e gôndolas requerem também a correção `fix/map-list-query-performance`, com consulta do catálogo por empresa em `/api/v1/store-map`. A referência anterior `28c73d8` usava as mesmas regras de login, mas combinava listagens globais, inadequadas para o volume real.
 
-1. **Autenticação entregue pela PR #51:** JWT por cookies, cliente HTTP compartilhado, CSRF, tratamento de expiração e testes. Renovação automática pertence ao backend. A PR atual remove a identidade fictícia do Perfil e usa os dados disponíveis da sessão; nome e empresa reais dependem da ampliação do contrato de identidade (ver `visual-profile.md`).
-2. Gôndolas e mapa: conectar setores/corredores/gôndolas, reconciliar IDs e posições e integrar operações reais.
+1. **Autenticação e identidade entregues pelas PRs #51 e #52:** JWT por cookies, cliente HTTP compartilhado, CSRF, tratamento de expiração e perfil com dados disponíveis da sessão. Renovação automática pertence ao backend. Nome e empresa reais dependem da ampliação do contrato de identidade (ver `visual-profile.md`).
+2. **PR atual — Gôndolas e mapa:** consulta de setores/corredores/gôndolas/produtos/vínculos, IDs reais, mapa esquemático e CRUD persistente de gôndolas. Capacidades e saldos disponíveis substituem métricas sem fonte. Ver `shelf-management.md` e `store-map.md` para limites e confirmação de gravações.
 3. Produtos e estoque: consulta, categorias e operações de catálogo conforme DTOs e vínculos reais.
 4. Reposição e funcionários: PRs dedicadas para tarefas, responsáveis, equipe e operações disponíveis.
 5. Vendas, Dashboard e Insights: mapear dados existentes, períodos e cálculos; registrar os indicadores sem fonte disponível. PRs por módulo.
@@ -29,7 +29,7 @@ Cada integração parte da main atualizada, preserva os tipos de apresentação 
 
 Entregues: configuração do frontend, template de PR, validações do repositório, rotas e Not Found, layout, Sidebar, Header, Login e autenticação com Context/reducer/rotas protegidas.
 
-A adaptação JWT está na PR atual. Componentes compartilhados foram integrados pela PR #26 e já são usados nas páginas.
+A adaptação JWT foi entregue pela PR #51. Componentes compartilhados foram integrados pela PR #26 e já são usados nas páginas.
 
 ## Semana 2 — Visão operacional
 
