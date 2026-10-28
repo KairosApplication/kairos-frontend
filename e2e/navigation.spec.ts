@@ -22,6 +22,7 @@ test('@a11y identifica rotas, permite pular o menu e mantém foco nos filtros', 
 
 test('@a11y modal contém Tab e Shift+Tab, fecha com Escape e devolve o foco', async ({ page }) => {
   await page.goto('/funcionarios')
+  await expect(page.getByRole('heading', { name: 'Funcionários', exact: true })).toBeFocused()
   const trigger = page.getByRole('button', { name: 'Novo funcionário', exact: true })
   await trigger.focus(); await page.keyboard.press('Enter')
   const dialog = page.getByRole('dialog', { name: 'Novo funcionário', exact: true })
