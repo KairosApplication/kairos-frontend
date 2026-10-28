@@ -69,6 +69,7 @@ test('@a11y product form errors and deletion remain accessible in both themes at
   await page.setViewportSize({ width: 320, height: 844 })
   for (const theme of ['light', 'dark'] as const) {
     await preferredTheme(page, theme); await page.goto('/produtos')
+    await expect(page.getByRole('heading', { name: 'Produtos', exact: true })).toBeFocused()
     const trigger = page.getByRole('button', { name: 'Novo produto', exact: true })
     await trigger.focus(); await page.keyboard.press('Enter')
     await fill(page)
