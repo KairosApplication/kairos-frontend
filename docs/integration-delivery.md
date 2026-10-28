@@ -12,7 +12,7 @@ Rodada de 27/10/2026. As PRs foram preparadas independentemente a partir da main
 | [60](https://github.com/KairosApplication/kairos-frontend/pull/60) | Dashboard e Insights | Indicadores compartilhados do catálogo e reposições, gráfico, tabela acessível e CSV. |
 | [61](https://github.com/KairosApplication/kairos-frontend/pull/61) | Perfil e Configurações | Identidade disponível, revalidação, logout e tema persistente, sem salvamentos fictícios. |
 | [62](https://github.com/KairosApplication/kairos-frontend/pull/62) | KAIROS IA | Cliente das rotas pessoais do serviço Python, sem token de serviço no navegador. |
-| Atual | Alertas e entrega | Alertas abertos vinculados ao catálogo, navegação ao mapa e documentação final. |
+| [63](https://github.com/KairosApplication/kairos-frontend/pull/63) | Alertas e entrega | Alertas abertos vinculados ao catálogo, navegação ao mapa e documentação final. |
 
 ## Dependências de contrato
 
@@ -30,6 +30,8 @@ O Header consulta `/alerts/list` e `/store-map` somente quando o painel é abert
 ## Validação e conclusão
 
 Cada PR tem build, lint e testes dos fluxos alterados. Os testes de escrita usam HTTP simulado; não criam contas, produtos ou mensagens no banco real. A checagem integrada local reúne os commits sem merge na main, resolvendo apenas sobreposições de fixtures/testes.
+
+Validação conjunta em 28/10/2026: lint e build aprovados; 205 testes unitários aprovados. A execução completa no Chrome aprovou 67 de 70 cenários; após corrigir um texto da fixture integrada e aguardar o foco inicial da rota nos testes de teclado, as reexecuções direcionadas aprovaram 12 de 12 cenários (incluindo os três que falharam). Os 70 cenários ficaram cobertos por essas execuções, com verificações automatizadas de acessibilidade nos dois temas. Isso não substitui homologação contra os serviços reais.
 
 Após os merges, repetir login/expiração/logout, consulta e CRUD autorizado, filtros, paginação, gráficos/CSV, falhas de rede/permissão e respostas incertas. Confirmar que uma gravação nunca é repetida automaticamente.
 
