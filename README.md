@@ -84,11 +84,22 @@ export default defineConfig([
 <!-- docs-bot:start -->
 ## Documentação
 
+- [Auditoria de acessibilidade — WCAG 2.1 A e AA](docs/accessibility-audit.md)
+- [Acessibilidade: contraste e reflow](docs/accessibility-contrast.md)
+- [Acessibilidade: formulários e mensagens](docs/accessibility-forms.md)
+- [Acessibilidade: navegação e foco](docs/accessibility-navigation.md)
 - [Dashboard visual](docs/dashboard.md)
 - [Login do gerente](docs/login-api.md)
-- [Catálogo de Produtos](docs/product-catalog.md)
+- [Catálogo de Produtos — consulta real](docs/product-catalog.md)
 - [Planejamento KAIROS Web — gerente](docs/roadmap.md)
 - [Componentes compartilhados](docs/shared-ui.md)
-- [Gestão de Gôndolas](docs/shelf-management.md)
-- [Mapa da Loja](docs/store-map.md)
+- [Gestão de Gôndolas — integração com a API](docs/shelf-management.md)
+- [Mapa da Loja — dados reais](docs/store-map.md)
+- [Funcionários — cobertura visual](docs/visual-employees.md)
+- [Insights — cobertura visual](docs/visual-insights.md)
+- [KAIROS IA — cobertura visual](docs/visual-kairos-ai.md)
+- [Meu Perfil — identidade autenticada](docs/visual-profile.md)
+- [Central de Reposição — cobertura visual](docs/visual-restocking.md)
+- [Vendas & Clientes — cobertura visual](docs/visual-sales-customers.md)
+- [Configurações — cobertura visual](docs/visual-settings.md)
 <!-- docs-bot:end -->
