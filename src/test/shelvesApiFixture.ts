@@ -1,9 +1,10 @@
 import type { AisleDto, ProductShelfDto, SectorDto, ShelfDto } from '../types/shelfApi'
 import type { ProductDto } from '../types/storeCatalogApi'
 
-export type ShelfApiFixture = { sectors: SectorDto[]; aisles: AisleDto[]; shelves: ShelfDto[]; products: ProductDto[]; links: ProductShelfDto[] }
+export type ShelfApiFixture = { categories: ProductDto['category'][]; sectors: SectorDto[]; aisles: AisleDto[]; shelves: ShelfDto[]; products: ProductDto[]; links: ProductShelfDto[] }
 export function makeShelfApiFixture(): ShelfApiFixture {
   return {
+    categories: [{ id: 1, category: 'Bebidas' }, { id: 2, category: 'Mercearia' }, { id: 3, category: 'Higiene' }, { id: 4, category: 'Limpeza' }],
     sectors: [{ id: 1, name: 'Bebidas' }, { id: 2, name: 'Mercearia' }],
     aisles: [{ id: 11, sectorId: 1, sectorName: 'Bebidas', position: 1 }, { id: 12, sectorId: 1, sectorName: 'Bebidas', position: 2 }, { id: 21, sectorId: 2, sectorName: 'Mercearia', position: 3 }],
     shelves: [
@@ -35,6 +36,26 @@ export function addProductCatalogCases(db: ShelfApiFixture) {
 }
 // Simulador de HTTP exclusivo dos testes; nunca é importado pelos services de produção.
 export function handleShelfFixture(db: ShelfApiFixture, method: string, path: string, body?: unknown): { status: number; json?: unknown } | null {
+  if (method === 'GET' && path === '/categories/list') return { status: 200, json: db.categories }
+  if ((method === 'POST' && path === '/products/company/registration') || (method === 'PATCH' && path.startsWith('/products/company/update/'))) {
+    if (typeof body !== 'object' || !body || !('name' in body) || !('brand' in body) || !('price' in body) || !('categoryId' in body)) return { status: 400, json: {} }
+    const category = db.categories.find(c => c.id === body.categoryId)
+    if (!category || typeof body.name !== 'string' || !body.name.trim() || typeof body.brand !== 'string' || !body.brand.trim() || typeof body.price !== 'number' || body.price < 0) return { status: 400, json: {} }
+    const id = Number(path.split('/').at(-1))
+    if (method === 'PATCH' && !db.products.some(p => p.id === id)) return { status: 404, json: {} }
+    if (db.products.some(p => p.name === body.name && (method === 'POST' || p.id !== id))) return { status: 409, json: {} }
+    const product: ProductDto = { id: method === 'POST' ? Math.max(0, ...db.products.map(p => p.id)) + 1 : id, name: body.name, brand: body.brand, price: body.price, category }
+    if (method === 'POST') db.products.push(product)
+    else db.products = db.products.map(p => p.id === id ? product : p)
+    return { status: method === 'POST' ? 201 : 200, json: product }
+  }
+  if (method === 'DELETE' && path.startsWith('/products/company/delete/')) {
+    const id = Number(path.split('/').at(-1))
+    if (db.links.some(l => l.productId === id)) return { status: 409, json: {} }
+    if (!db.products.some(p => p.id === id)) return { status: 404, json: {} }
+    db.products = db.products.filter(p => p.id !== id)
+    return { status: 204 }
+  }
   if (method === 'GET' && path === '/store-map') return { status: 200, json: { sectors: db.sectors, aisles: db.aisles, shelves: db.shelves, products: db.products, productShelves: db.links } }
   const lists: Record<string, unknown> = { '/sectors/list': db.sectors, '/aisles/list': db.aisles, '/shelves/list': db.shelves, '/products/list': db.products, '/product-shelves/list': db.links }
   if (method === 'GET' && path in lists) return { status: 200, json: lists[path] }

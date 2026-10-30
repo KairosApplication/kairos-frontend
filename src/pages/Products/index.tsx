@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
-import { ArrowRight, ChevronDown, Eye, Search, TriangleAlert } from 'lucide-react'
+import { ArrowRight, ChevronDown, Eye, Pencil, Plus, Search, Trash2, TriangleAlert } from 'lucide-react'
 import Badge from '../../components/Badge'
 import Button from '../../components/Button'
 import Card from '../../components/Card'
@@ -12,7 +12,11 @@ import SelectField from '../../components/SelectField'
 import TextField from '../../components/TextField'
 import useApiData from '../../hooks/useApiData'
 import { getProductCatalog, productAvailability } from '../../services/productCatalogService'
-import type { CatalogProduct, ProductAvailability } from '../../types/productCatalog'
+import { createProduct, updateProduct, deleteProduct, ProductMutationUncertainError } from '../../services/productMutationService'
+import { ApiHttpError } from '../../services/apiData'
+import type { CatalogProduct, ProductAvailability, ProductInput } from '../../types/productCatalog'
+import ProductForm from './ProductForm'
+import DeleteProduct from './DeleteProduct'
 import './styles.css'
 
 const labels: Record<ProductAvailability, string> = { stocked: 'Com saldo', partial: 'Saldo parcial', zero: 'Sem saldo', unlinked: 'Sem gôndola' }
@@ -23,12 +27,18 @@ const pageSize = 5
 const units = (product: CatalogProduct) => product.shelfUnits === null ? 'Não informado' : `${product.shelfUnits} un.`
 
 export default function Products() {
-  const { data, error, reload } = useApiData(getProductCatalog)
+  const { data, error, reload, fail } = useApiData(getProductCatalog)
   const [categoryId, setCategoryId] = useState('all')
   const [availability, setAvailability] = useState('all')
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(1)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [editor, setEditor] = useState<{ product?: CatalogProduct } | null>(null)
+  const [deleting, setDeleting] = useState<CatalogProduct | null>(null)
+  const [message, setMessage] = useState('')
+  const createButton = useRef<HTMLButtonElement>(null)
+  const focusTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => () => { if (focusTimer.current !== null) clearTimeout(focusTimer.current) }, [])
   const selected = data?.products.find(product => product.id === selectedId)
   const search = normalize(query)
   const filtered = data?.products.filter(product => {
@@ -51,13 +61,54 @@ export default function Products() {
     { key: 'units', header: 'Nas gôndolas', render: units },
     { key: 'location', header: 'Local', render: product => product.placements.length === 1 ? `Gôndola ${product.placements[0].shelfId}` : product.placements.length ? `${product.placements.length} gôndolas` : 'Sem gôndola' },
     { key: 'status', header: 'Saldo', render: product => <Badge tone={tones[productAvailability(product)]}>{labels[productAvailability(product)]}</Badge> },
-    { key: 'actions', header: 'Ações', render: product => <Button variant="ghost" className="products__details-button"
-      aria-label={`Ver detalhes de ${product.name}`} title={`Ver detalhes de ${product.name}`} onClick={() => setSelectedId(product.id)}><Eye size={18} aria-hidden="true" /></Button> },
+    { key: 'actions', header: 'Ações', render: product => <div className="products__row-actions"><Button variant="ghost" className="products__details-button"
+      aria-label={`Ver detalhes de ${product.name}`} title={`Ver detalhes de ${product.name}`} onClick={() => setSelectedId(product.id)}><Eye size={18} aria-hidden="true" /></Button>
+      <Button variant="ghost" className="products__details-button" aria-label={`Editar produto ${product.id}`} title={`Editar produto ${product.id}`} onClick={() => openEditor(product)}><Pencil size={16} aria-hidden="true" /></Button>
+      <Button variant="ghost" className="products__details-button" aria-label={`Excluir produto ${product.id}`} title={`Excluir produto ${product.id}`} onClick={() => openDelete(product)}><Trash2 size={16} aria-hidden="true" /></Button></div> },
   ]
   function clearFilters() { setCategoryId('all'); setAvailability('all'); setQuery(''); setPage(1) }
+  function cancelFocus() { if (focusTimer.current !== null) clearTimeout(focusTimer.current); focusTimer.current = null }
+  function openEditor(product?: CatalogProduct) { cancelFocus(); setSelectedId(null); setEditor({ product }) }
+  function openDelete(product: CatalogProduct) { cancelFocus(); setSelectedId(null); setDeleting(product) }
+  function restoreFocus() {
+    cancelFocus()
+    focusTimer.current = setTimeout(() => {
+      focusTimer.current = null
+      if (!document.querySelector('dialog[open]')) {
+        if (createButton.current && !createButton.current.disabled) createButton.current.focus()
+        else document.querySelector<HTMLElement>('.products .ui-feedback button')?.focus()
+      }
+    }, 0)
+  }
+  function stopUncertainWrite(cause: unknown) {
+    if (!(cause instanceof ProductMutationUncertainError) && !(cause instanceof ApiHttpError && cause.status === 401)) return false
+    setEditor(null); setDeleting(null); setSelectedId(null); setMessage(''); fail(cause); restoreFocus()
+    return true
+  }
+  async function save(input: ProductInput) {
+    let id: string | null
+    try { id = editor?.product ? await updateProduct(editor.product.id, input) : await createProduct(input) }
+    catch (cause) { if (stopUncertainWrite(cause)) return; throw cause }
+    const targetId = id ?? editor?.product?.id
+    setMessage(`Produto${targetId ? ` ${targetId}` : ''} ${editor?.product ? 'atualizado' : 'criado'} com sucesso.`)
+    setEditor(null); setSelectedId(null); clearFilters()
+    const next = await reload()
+    const index = next?.products.findIndex(p => p.id === targetId) ?? -1
+    if (index >= 0) setPage(Math.floor(index / pageSize) + 1)
+    restoreFocus()
+  }
+  async function remove() {
+    if (!deleting) return
+    try { await deleteProduct(deleting.id) } catch (cause) { if (stopUncertainWrite(cause)) return; throw cause }
+    setMessage(`Produto ${deleting.id} excluído com sucesso.`)
+    setDeleting(null); setSelectedId(null)
+    await reload(); restoreFocus()
+  }
 
   return <main className="products">
-    <PageHeader title="Produtos" description="Consulte o catálogo, os preços e os saldos das gôndolas da sua empresa." />
+    <PageHeader title="Produtos" description="Consulte o catálogo, os preços e os saldos das gôndolas da sua empresa."
+      actions={<Button ref={createButton} icon={<Plus size={18} />} disabled={!data} onClick={() => openEditor()}>Novo produto</Button>} />
+    {message && <p className="products__success" role="status">{message}</p>}
     {error ? <Feedback kind="error" title="Não foi possível carregar os produtos." description={error.message} onRetry={() => void reload()} />
       : !data ? <Feedback kind="loading" title="Carregando produtos…" /> : <>
         <Card className="products__summary" aria-label="Resumo do catálogo da empresa"><dl>
@@ -106,6 +157,8 @@ export default function Products() {
         <p className="products__data-note">Com saldo: todos os vínculos positivos. Saldo parcial: há gôndolas com e sem saldo. Sem saldo: todos os vínculos zerados. Sem gôndola: nenhum vínculo, saldo não informado.</p>
         <p className="products__data-note">SKU, código de barras, estoque no depósito, estoque mínimo e situação ativo/inativo não são fornecidos nesta consulta. Saldo positivo não representa uma meta de abastecimento.</p>
         <footer className="products__footer"><span>Catálogo da empresa autenticada</span><span>Consulta realizada em {data.updatedAt}</span></footer>
+        {editor && <ProductForm product={editor.product} onClose={() => setEditor(null)} onSave={save} />}
+        {deleting && <DeleteProduct product={deleting} onClose={() => setDeleting(null)} onDelete={remove} />}
         <Modal open={Boolean(selected)} onClose={() => setSelectedId(null)} title={selected?.name ?? 'Detalhes do produto'}
           description="Dados cadastrados na empresa. Consulta sem alteração de estoque ou preço."
           actions={<Button variant="secondary" onClick={() => setSelectedId(null)}>Fechar</Button>}>
