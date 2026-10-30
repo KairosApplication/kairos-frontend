@@ -1,5 +1,5 @@
-import { useState, type SubmitEvent } from 'react'
-import { ChevronDown, Plus, Search, UserRound, UsersRound } from 'lucide-react'
+import { useRef, useState, type SubmitEvent } from 'react'
+import { Plus, Search } from 'lucide-react'
 import Badge from '../../components/Badge'
 import Button from '../../components/Button'
 import Feedback from '../../components/Feedback'
@@ -7,85 +7,78 @@ import Modal from '../../components/Modal'
 import SelectField from '../../components/SelectField'
 import TextField from '../../components/TextField'
 import VisualPage from '../../components/VisualPage'
-import useDemoData from '../../hooks/useDemoData'
+import useApiData from '../../hooks/useApiData'
 import useFormValidation from '../../hooks/useFormValidation'
-import useStatusMessage from '../../hooks/useStatusMessage'
-import StatusMessage from '../../components/StatusMessage'
-import { getRestockingView } from '../../services/restockingViewService'
-import type { RestockingTask } from '../../types/restockingView'
+import { ApiHttpError } from '../../services/apiData'
+import { getRestockingCatalog, RestockingUncertainError, writeRestocking, type RestockingRecord } from '../../services/restockingApiService'
 import './styles.css'
-import '../../styles/accessible-names.css'
-
-const columns = [{ id: 'pending', title: 'Pendentes', tone: 'warning' }, { id: 'active', title: 'Em andamento', tone: 'success' }, { id: 'done', title: 'Concluídas', tone: 'success' }] as const
-const people = ['João Silva', 'Mariana Lima', 'Pedro Santos']
-
+const normalize = (v: string) => v.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
 export default function Restocking() {
-  const { data, loading, error, retry } = useDemoData(getRestockingView)
-  const [created, setCreated] = useState<RestockingTask[]>([])
-  const [search, setSearch] = useState('')
+  const { data, error, reload, fail } = useApiData(getRestockingCatalog)
+  const [query, setQuery] = useState('')
   const [responsible, setResponsible] = useState('all')
-  const [day, setDay] = useState('today')
-  const [creating, setCreating] = useState(false)
-  const [selected, setSelected] = useState<RestockingTask | null>(null)
-  const [expanded, setExpanded] = useState<string | null>(null)
-  const [message, setMessage] = useStatusMessage()
-  const { formRef, errors, validate, clear, reset } = useFormValidation()
-  const tasks = [...created, ...(data ?? [])]
-  const normalized = search.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
-  const filtered = tasks.filter((task) => day === 'today' && (responsible === 'all' || task.responsible === responsible)
-    && `${task.shelf} ${task.product}`.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(normalized))
-
-  function create(event: SubmitEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (!validate(event.currentTarget)) return
-    const fields = new FormData(event.currentTarget)
-    const product = String(fields.get('product') ?? '').trim()
-    const shelf = String(fields.get('shelf') ?? '').trim().toUpperCase()
-    const quantity = Number(fields.get('quantity'))
-    if (!product || !shelf || !Number.isInteger(quantity) || quantity < 1) return
-    setCreated((previous) => [{ id: `DEMO-${previous.length + 1}`, product, shelf, quantity, responsible: '', status: 'pending', urgent: false, time: 'Criada nesta demonstração' }, ...previous])
-    setCreating(false); setDay('today'); setSearch(''); setResponsible('all')
-    setMessage('Reposição adicionada à demonstração. Nenhuma tarefa foi enviada à loja.')
+  const [date, setDate] = useState('')
+  const [dialog, setDialog] = useState<{ mode: 'create' | 'edit' | 'delete'; record?: RestockingRecord } | null>(null)
+  const [selected, setSelected] = useState<RestockingRecord | null>(null)
+  const [expanded, setExpanded] = useState('')
+  const [message, setMessage] = useState('')
+  const [failure, setFailure] = useState('')
+  const [busy, setBusy] = useState(false)
+  const pending = useRef(false)
+  const createButton = useRef<HTMLButtonElement>(null)
+  const { formRef, errors, validate, reject, reset, clear } = useFormValidation()
+  const product = (id: number) => data?.catalog.products.find(p => p.id === id)?.name ?? `Produto ${id}`
+  const person = (id: number) => data?.people.find(p => p.id === id)?.userName ?? `Funcionário ${id}`
+  const records = data?.records.filter(r => (responsible === 'all' || String(r.employeeId) === responsible) && (!date || r.restockingDate.slice(0, 10) === date) && normalize(`${r.id} ${r.shelfId} ${product(r.productId)}`).includes(normalize(query))) ?? []
+  const columns = [{ id: 'all', title: 'Registros', records }, { id: 'intact', title: 'Sem avarias', records: records.filter(r => r.damagedQuantity === 0) }, { id: 'damaged', title: 'Com avarias', records: records.filter(r => r.damagedQuantity > 0) }]
+  function open(mode: NonNullable<typeof dialog>['mode'], record?: RestockingRecord) { reset(); setFailure(''); setSelected(null); setDialog({ mode, record }) }
+  async function submit(event?: SubmitEvent<HTMLFormElement>) {
+    event?.preventDefault()
+    if (pending.current || !dialog || !data) return
+    let body: Omit<RestockingRecord, 'id' | 'restockingDate'> | undefined
+    if (dialog.mode !== 'delete') {
+      if (!event || !validate(event.currentTarget)) return
+      const form = new FormData(event.currentTarget)
+      body = { inventoryId: Number(form.get('inventoryId')), employeeId: Number(form.get('employeeId')), productId: Number(form.get('productId')), shelfId: Number(form.get('shelfId')), restockedQuantity: Number(form.get('restockedQuantity')), damagedQuantity: Number(form.get('damagedQuantity')) }
+      if (body.damagedQuantity > body.restockedQuantity) { reject({ damagedQuantity: 'As avarias não podem superar a quantidade reposta.' }); return }
+      if (!data.inventories.some(i => i.id === body?.inventoryId) || !data.people.some(p => p.id === body?.employeeId) || !data.catalog.products.some(p => p.id === body?.productId) || !data.catalog.shelves.some(s => s.id === body?.shelfId)) { setFailure('Selecione os vínculos disponíveis nesta consulta.'); return }
+    }
+    pending.current = true; setBusy(true); setFailure(''); setMessage('')
+    try {
+      await writeRestocking(dialog.mode === 'create' ? 'POST' : dialog.mode === 'edit' ? 'PATCH' : 'DELETE', body, dialog.record?.id)
+      setDialog(null); setSelected(null); setMessage('Registro de reposição atualizado.'); setDate(''); setResponsible('all'); setQuery('')
+      await reload(); setTimeout(() => createButton.current?.focus(), 0)
+    } catch (cause) {
+      if (cause instanceof RestockingUncertainError || cause instanceof ApiHttpError && cause.status === 401) { setDialog(null); fail(cause) }
+      else setFailure(cause instanceof Error ? cause.message : 'Não foi possível atualizar a reposição.')
+    } finally { pending.current = false; setBusy(false) }
   }
-
-  function taskCard(task: RestockingTask) {
-    return <button type="button" className="restock-task" key={task.id} onClick={() => setSelected(task)}>
-      <span className="a11y-hidden-label">Ver reposição</span>{' '}
-      <span className="restock-task__top"><small>{task.id}</small>{' '}<Badge tone={task.status === 'done' ? 'success' : task.urgent ? 'danger' : 'warning'}>{task.status === 'done' ? 'Concluída' : task.urgent ? 'Urgente' : 'Normal'}</Badge></span>{' '}
-      <strong>Gôndola {task.shelf}</strong>{' '}<span className="restock-task__product">{task.product} · {task.quantity} unidades</span>{' '}
-      <span className="restock-task__person">{task.responsible ? <UserRound size={16} aria-hidden="true" /> : <UsersRound size={16} aria-hidden="true" />}{task.responsible || 'Sem responsável'}</span>{' '}<small>{task.time}</small>
-    </button>
-  }
-
-  return <VisualPage title="Central de Reposição" description="Da identificação à conclusão: acompanhe cada tarefa da equipe." className="restocking"
-    actions={<Button icon={<Plus />} onClick={() => { reset(); setCreating(true) }}>Criar reposição</Button>}>
-    <StatusMessage notice={message} />
-    {error ? <Feedback kind="error" title="Não foi possível carregar as reposições." onRetry={retry} /> : loading ? <Feedback kind="loading" title="Carregando reposições…" /> : <>
-      <div className="visual-toolbar restocking__toolbar"><TextField label="Buscar produto ou gôndola" placeholder="Buscar produto ou gôndola" icon={<Search size={18} />} type="search" value={search} onChange={(event) => setSearch(event.target.value)} />
-        <div className="visual-filter-select"><SelectField label="Responsável" value={responsible} onChange={(event) => setResponsible(event.target.value)}><option value="all">Todos os responsáveis</option><option value="">Sem responsável</option>{people.map((person) => <option key={person}>{person}</option>)}</SelectField><ChevronDown size={18} aria-hidden="true" /></div>
-        <div className="visual-filter-select restocking__date"><SelectField label="Data" value={day} onChange={(event) => setDay(event.target.value)}><option value="today">Hoje · 25 set</option><option value="yesterday">Ontem · 24 set</option></SelectField><ChevronDown size={18} aria-hidden="true" /></div>
-        <Badge tone="success">Amostra · 14:32</Badge>
-      </div>
-      <div className="restocking__board">{columns.map((column) => {
-        const entries = filtered.filter((task) => task.status === column.id)
-        return <section className="restocking__column" key={column.id} aria-label={column.title}>
-          <header><h2>{column.title}</h2><Badge tone={column.tone}>{entries.length}</Badge></header>
-          <div className="restocking__tasks">{entries.slice(0, column.id === 'pending' ? 3 : 2).map(taskCard)}</div>
-          {!entries.length && <p className="visual-note">Nenhuma reposição neste filtro.</p>}
-          <Button variant="ghost" onClick={() => setExpanded(column.id)}>Ver todas as {entries.length} {column.title.toLowerCase()} →</Button>
-        </section>
-      })}</div>
+  function taskCard(r: RestockingRecord) { return <button type="button" className="restock-task" key={r.id} onClick={() => { setExpanded(''); setSelected(r) }}><span className="restock-task__top"><small>REP-{r.id}</small><Badge tone={r.damagedQuantity ? 'warning' : 'success'}>{r.damagedQuantity ? 'Com avarias' : 'Sem avarias'}</Badge></span><strong>Gôndola {r.shelfId}</strong><span className="restock-task__product">{product(r.productId)} · {r.restockedQuantity} unidades</span><span className="restock-task__person">{person(r.employeeId)}</span><small>{r.restockingDate.replace('T', ' ').slice(0, 16)}</small></button> }
+  const current = dialog?.record
+  const canCreate = !!data?.inventories.length && !!data.people.length && !!data.catalog.products.length && !!data.catalog.shelves.length
+  return <VisualPage title="Central de Reposição" description="Consulte e registre as reposições e avarias da operação." className="restocking" footer="Registros consultados na API"
+    actions={<Button ref={createButton} icon={<Plus />} disabled={!data || !canCreate} onClick={() => open('create')}>Criar reposição</Button>}>
+    {message && <p role="status">{message}</p>}
+    {error ? <Feedback kind="error" title="Não foi possível carregar as reposições." description={error.message} onRetry={() => void reload()} /> : !data ? <Feedback kind="loading" title="Carregando reposições…" /> : <>
+      <div className="visual-toolbar restocking__toolbar"><TextField label="Buscar produto ou gôndola" type="search" value={query} icon={<Search />} onChange={e => setQuery(e.target.value)} />
+        <SelectField label="Responsável" value={responsible} onChange={e => setResponsible(e.target.value)}><option value="all">Todos os responsáveis</option>{data.people.map(p => <option value={p.id} key={p.id}>{p.userName}</option>)}</SelectField>
+        <TextField label="Data" type="date" value={date} onChange={e => setDate(e.target.value)} /></div>
+      {!canCreate && <p className="visual-note">É necessário haver produto, gôndola, responsável e depósito disponíveis para criar um registro.</p>}
+      <div className="restocking__board">{columns.map(column => <section className="restocking__column" key={column.id} aria-label={column.title}><header><h2>{column.title}</h2><Badge tone="neutral">{column.records.length}</Badge></header><div className="restocking__tasks">{column.records.slice(0, 3).map(taskCard)}</div>{!column.records.length && <p>Nenhum registro neste filtro.</p>}<Button variant="ghost" onClick={() => setExpanded(column.id)}>Ver todos: {column.title}</Button></section>)}</div>
     </>}
-    <Modal open={creating} onClose={() => setCreating(false)} title="Criar reposição" description="Simulação temporária. Recarregar descarta as tarefas criadas."
-      actions={<><Button variant="secondary" onClick={() => setCreating(false)}>Cancelar</Button><Button type="submit" form="restocking-create">Adicionar à demonstração</Button></>}>
-      <form id="restocking-create" ref={formRef} onSubmit={create} noValidate className="visual-form"><p className="visual-note">Campos com * são obrigatórios.</p><TextField name="product" error={errors.product} label="Produto" required maxLength={80} onChange={() => clear('product')} /><TextField name="shelf" error={errors.shelf} label="Gôndola" required maxLength={12} onChange={() => clear('shelf')} /><TextField name="quantity" error={errors.quantity} label="Quantidade" type="number" min={1} max={9999} step={1} defaultValue={12} required onChange={() => clear('quantity')} /></form>
+    <Modal open={!!selected} onClose={() => setSelected(null)} title={`Reposição ${selected?.id ?? ''}`} description="Quantidades registradas na API."
+      actions={<><Button variant="secondary" onClick={() => setSelected(null)}>Fechar</Button><Button onClick={() => selected && open('edit', selected)}>Editar registro</Button><Button variant="danger" onClick={() => selected && open('delete', selected)}>Excluir registro</Button></>}>
+      {selected && <dl className="visual-details"><div><dt>Produto</dt><dd>{product(selected.productId)}</dd></div><div><dt>Gôndola</dt><dd>{selected.shelfId}</dd></div><div><dt>Responsável</dt><dd>{person(selected.employeeId)}</dd></div><div><dt>Quantidade reposta</dt><dd>{selected.restockedQuantity}</dd></div><div><dt>Avarias</dt><dd>{selected.damagedQuantity}</dd></div><div><dt>Data</dt><dd>{selected.restockingDate.replace('T', ' ')}</dd></div></dl>}
     </Modal>
-    <Modal open={Boolean(selected)} onClose={() => setSelected(null)} title={`Reposição ${selected?.id ?? ''}`} description="Dados demonstrativos. Consulta sem alterar a operação da loja." actions={<Button variant="secondary" onClick={() => setSelected(null)}>Fechar</Button>}>
-      {selected && <dl className="visual-details"><div><dt>Gôndola</dt><dd>{selected.shelf}</dd></div><div><dt>Produto</dt><dd>{selected.product}</dd></div><div><dt>Quantidade</dt><dd>{selected.quantity}</dd></div><div><dt>Responsável</dt><dd>{selected.responsible || 'Sem responsável'}</dd></div><div><dt>Situação</dt><dd>{columns.find((column) => column.id === selected.status)?.title}</dd></div></dl>}
-    </Modal>
-    <Modal open={Boolean(expanded)} onClose={() => setExpanded(null)} title={columns.find((column) => column.id === expanded)?.title ?? 'Reposições'} description="Amostra filtrada de reposições." actions={<Button variant="secondary" onClick={() => setExpanded(null)}>Fechar</Button>}>
-      <ul className="restocking__all">{filtered.filter((task) => task.status === expanded).map((task) => <li key={task.id}><strong>{task.id} · {task.shelf}</strong><span>{task.product} · {task.quantity} un.</span></li>)}</ul>
-      {!filtered.some((task) => task.status === expanded) && <p>Nenhuma reposição neste filtro.</p>}
+    <Modal open={!!expanded} onClose={() => setExpanded('')} title={columns.find(c => c.id === expanded)?.title ?? 'Registros'} actions={<Button onClick={() => setExpanded('')}>Fechar</Button>}><div className="restocking__tasks">{columns.find(c => c.id === expanded)?.records.map(taskCard)}</div></Modal>
+    <Modal open={!!dialog} onClose={() => { if (!pending.current) setDialog(null) }} title={dialog?.mode === 'create' ? 'Criar reposição' : dialog?.mode === 'edit' ? 'Editar reposição' : 'Excluir reposição?'}
+      actions={<><Button variant="secondary" disabled={busy} onClick={() => setDialog(null)}>Cancelar</Button>{dialog?.mode === 'delete' ? <Button variant="danger" loading={busy} onClick={() => void submit()}>Confirmar exclusão</Button> : <Button type="submit" form="restocking-api-form" loading={busy}>Salvar reposição</Button>}</>}>
+      {failure && <p role="alert">{failure}</p>}
+      {dialog?.mode === 'delete' ? <p>Excluir o registro {current?.id}? Esta operação não transfere produtos nem ajusta automaticamente o saldo nas gôndolas.</p> : dialog && data && <form key={`${dialog.mode}-${current?.id ?? 'new'}`} id="restocking-api-form" ref={formRef} className="visual-form" noValidate onSubmit={submit}>
+        {([{ name: 'productId', label: 'Produto', values: data.catalog.products.map(p => ({ id: p.id, label: p.name })) }, { name: 'shelfId', label: 'Gôndola', values: data.catalog.shelves.map(s => ({ id: s.id, label: `Gôndola ${s.id}` })) }, { name: 'employeeId', label: 'Responsável', values: data.people.map(p => ({ id: p.id, label: p.userName })) }, { name: 'inventoryId', label: 'Depósito', values: data.inventories.map(i => ({ id: i.id, label: `${i.sectorName} · ID ${i.id}` })) }] as const).map(field => <SelectField key={field.name} name={field.name} label={field.label} required disabled={busy} defaultValue={current?.[field.name] ?? ''} error={errors[field.name]} onChange={() => clear(field.name)}><option value="">Selecione</option>{field.values.map(v => <option key={v.id} value={v.id}>{v.label}</option>)}</SelectField>)}
+        <TextField name="restockedQuantity" label="Quantidade" type="number" min={1} max={2147483647} step={1} required defaultValue={current?.restockedQuantity ?? 1} disabled={busy} error={errors.restockedQuantity} onChange={() => clear('restockedQuantity')} />
+        <TextField name="damagedQuantity" label="Avarias" type="number" min={0} max={2147483647} step={1} required defaultValue={current?.damagedQuantity ?? 0} disabled={busy} error={errors.damagedQuantity} onChange={() => clear('damagedQuantity')} />
+      </form>}
     </Modal>
   </VisualPage>
 }

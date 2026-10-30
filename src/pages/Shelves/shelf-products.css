@@ -1,0 +1,6 @@
+.shelf-products__list { display: grid; gap: 16px; padding: 0; list-style: none; }
+.shelf-products__list li { display: grid; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid var(--color-border); }
+.shelf-products__list li > div, .shelf-products__form > div:last-child { display: flex; flex-wrap: wrap; gap: 8px; }
+.shelf-products__list button { white-space: normal; text-align: left; }
+.shelf-products__form { display: grid; gap: 16px; margin-top: 24px; }
+.shelf-products__form p { color: var(--color-text-muted); font-size: 13px; line-height: 1.7; }

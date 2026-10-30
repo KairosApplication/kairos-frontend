@@ -16,13 +16,14 @@ import type { ShelfCatalogItem, ShelfInput } from '../../types/shelfCatalog'
 import type { ShelfStatus } from '../../types/storeMap'
 import ShelfForm from './ShelfForm'
 import DeleteShelf from './DeleteShelf'
+import ShelfProducts from './ShelfProducts'
 import './styles.css'
 
 const labels: Record<ShelfStatus, string> = { stocked: 'Com saldo', stockout: 'Com saldo zero', empty: 'Sem produtos' }
 const tones = { stocked: 'success', stockout: 'danger', empty: 'neutral' } as const
 const pageSize = 6
 const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').trim()
-function shelfColumns(onEdit: (shelf: ShelfCatalogItem) => void, onDelete: (shelf: ShelfCatalogItem) => void): TableColumn<ShelfCatalogItem>[] { return [
+function shelfColumns(onEdit: (shelf: ShelfCatalogItem) => void, onDelete: (shelf: ShelfCatalogItem) => void, onProducts: (id: string) => void): TableColumn<ShelfCatalogItem>[] { return [
   { key: 'id', header: 'ID', render: (shelf) => shelf.id },
   { key: 'sector', header: 'Setor', render: (shelf) => shelf.sectorName },
   { key: 'location', header: 'Localização', render: (shelf) => shelf.location },
@@ -30,6 +31,7 @@ function shelfColumns(onEdit: (shelf: ShelfCatalogItem) => void, onDelete: (shel
   { key: 'capacity', header: 'Capacidade', render: (shelf) => shelf.maximumCapacity },
   { key: 'status', header: 'Situação', render: (shelf) => <Badge tone={tones[shelf.status]}>{labels[shelf.status]}</Badge> },
   { key: 'actions', header: 'Ações', render: (shelf) => <div className="shelves__row-actions">
+    <Button variant="ghost" aria-label={`Gerenciar produtos da gôndola ${shelf.id}`} title={`Gerenciar produtos da gôndola ${shelf.id}`} onClick={() => onProducts(shelf.id)}><Package size={16} aria-hidden="true" /></Button>
     <Link className="shelves__map-action" to={`/mapa?gondola=${encodeURIComponent(shelf.id)}`}
       aria-label={`Ver gôndola ${shelf.id} no mapa`} title={`Ver gôndola ${shelf.id} no mapa`}><Map size={16} aria-hidden="true" /></Link>
     <Button variant="ghost" aria-label={`Editar gôndola ${shelf.id}`} title={`Editar gôndola ${shelf.id}`} onClick={() => onEdit(shelf)}><Pencil size={16} aria-hidden="true" /></Button>
@@ -46,9 +48,10 @@ export default function Shelves() {
   const [editor, setEditor] = useState<{ shelf?: ShelfCatalogItem } | null>(null)
   const [deleting, setDeleting] = useState<ShelfCatalogItem | null>(null)
   const [message, setMessage] = useState('')
+  const [managing, setManaging] = useState<string | null>(null)
   const createButton = useRef<HTMLButtonElement>(null)
   const focusTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const columns = shelfColumns(openEditor, openDelete)
+  const columns = shelfColumns(openEditor, openDelete, setManaging)
 
   function cancelPendingFocus() {
     if (focusTimer.current !== null) clearTimeout(focusTimer.current)
@@ -119,6 +122,7 @@ export default function Shelves() {
   ] as const : []
 
   return <main className="shelves">
+    {managing && <ShelfProducts shelfId={Number(managing)} onClose={changed => { setManaging(null); if (changed) void reload().then(restoreFocusAfterSave) }} />}
     <PageHeader title="Gestão de Gôndolas" description="Organize os espaços da loja e os produtos de cada gôndola."
       actions={<Button ref={createButton} icon={<Plus size={18} />} disabled={!data || !data.aisles.length} onClick={() => openEditor()}>Nova gôndola</Button>} />
     {message && <p className="shelves__success" role="status">{message}</p>}
