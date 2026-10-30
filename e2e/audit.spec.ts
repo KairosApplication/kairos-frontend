@@ -26,7 +26,7 @@ for (const theme of ['light', 'dark'] as const) {
     const cases = [
       ['/dashboard', 'Ver valores por dia'], ['/mapa', 'Ver detalhes'], ['/gondolas', 'Nova gôndola'],
       ['/produtos', 'Ver detalhes de Coca-Cola 2 L'], ['/reposicoes', 'Criar reposição'],
-      ['/funcionarios', 'Novo funcionário'], ['/vendas-clientes', 'Ver histórico'],
+      ['/funcionarios', 'Novo funcionário'], ['/vendas-clientes', 'Ver recomendações'],
       ['/perfil', 'Alterar senha'], ['/configuracoes', 'Gerenciar acessos'],
     ]
     for (const [path, trigger] of cases) {
