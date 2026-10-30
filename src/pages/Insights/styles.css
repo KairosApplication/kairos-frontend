@@ -7,9 +7,17 @@
 .insights__summary .ui-badge { min-width: 100px; font-size: 10px; }
 .insights__summary > div > span:last-child { color: #d1e7da; font-size: 10px; }
 .insights__categories { grid-area: categories; }
-.insights__shares { display: grid; gap: 28px; padding-top: 12px; }
+.insights__shares { display: grid; gap: 20px; padding: 12px 8px 8px 0; max-height: 280px; overflow-y: auto; scrollbar-gutter: stable; }
 .insights__shares > div { display: grid; grid-template-columns: 120px minmax(0, 1fr) 50px; align-items: center; gap: 20px; font-size: 12px; }
 .insights__shares strong { text-align: right; font-weight: 600; }
+.insights__shares > div > span { overflow-wrap: anywhere; }
+.insights__shares progress { appearance: none; display: block; width: 100%; min-width: 0; height: 12px; border: 0; border-radius: 8px; overflow: hidden; background: var(--color-background); color: var(--color-primary-strong); }
+.insights__shares progress::-webkit-progress-bar { background: var(--color-background); border-radius: 8px; }
+.insights__shares progress::-webkit-progress-value { background: var(--color-primary-strong); border-radius: 8px; }
+.insights__shares progress::-moz-progress-bar { background: var(--color-primary-strong); border-radius: 8px; }
+.insights__note { color: var(--color-text-muted); font-size: 12px; line-height: 1.7; margin-bottom: 0; }
+.insights__moves a > div { min-width: 0; }
+.insights__summary > p[role='status'] { text-transform: none; line-height: 1.7; margin: 16px 0 0; }
 .insights__track { height: 12px; background: var(--color-background); border-radius: 8px; }
 .insights__track > span { display: block; height: 100%; border-radius: inherit; background: #00845f; }
 .insights__moves { grid-area: moves; }
