@@ -22,6 +22,8 @@
 .employees__heading p { margin: 0; color: var(--color-text-muted); font-size: 12px; }
 .employees__cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px 16px; }
 .employee-card { padding: 18px; }
+.employee-card footer { display: grid; gap: 8px; }
+.employee-card footer .ui-button { min-width: 0; white-space: normal; text-align: left; overflow-wrap: anywhere; }
 .employee-card__top { display: flex; justify-content: space-between; align-items: center; color: var(--color-text-muted); }
 .employee-card__avatar { display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 50%; color: var(--color-primary); background: #e5f5eb; font-size: 16px; font-weight: 600; }
 .employee-card h3 { margin: 24px 0 10px; font-size: 17px; font-weight: 600; }
