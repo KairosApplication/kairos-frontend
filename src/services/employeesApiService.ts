@@ -1,13 +1,11 @@
-import { apiRequest, isRecord, readApiJson } from './apiClient'
-import { ApiHttpError, parseApiList } from './apiData'
+import { apiRequest, isRecord } from './apiClient'
+import { ApiHttpError, parseApiList, readApiData } from './apiData'
 export type ApiEmployee = { id: number; userId: number; userName: string; position: 'MANAGER' | 'STOCKER' | 'CASHIER' }
 type EmployeeDto = Omit<ApiEmployee, 'position'> & { position: string }
 const positive = (v: unknown): v is number => typeof v === 'number' && Number.isSafeInteger(v) && v > 0
 function valid(v: unknown): v is EmployeeDto { return isRecord(v) && positive(v.id) && positive(v.userId) && typeof v.userName === 'string' && !!v.userName.trim() && typeof v.position === 'string' && ['MANAGER', 'STOCKER', 'CASHIER'].includes(v.position.toUpperCase()) }
 export async function getEmployees(signal?: AbortSignal) {
-  const response = await apiRequest('/employees/list', { signal })
-  if (response.status !== 200) throw new ApiHttpError(response.status)
-  return parseApiList(await readApiJson(response), valid).map(p => ({ ...p, position: p.position.toUpperCase() as ApiEmployee['position'] })).sort((a, b) => a.userName.localeCompare(b.userName, 'pt-BR') || a.id - b.id)
+  return parseApiList(await readApiData('/employees/list', signal), valid).map(p => ({ ...p, position: p.position.toUpperCase() as ApiEmployee['position'] })).sort((a, b) => a.userName.localeCompare(b.userName, 'pt-BR') || a.id - b.id)
 }
 export class EmployeeWriteUncertainError extends Error { constructor() { super('Não foi possível confirmar a alteração. Consulte a equipe antes de tentar novamente.') } }
 export async function writeEmployee(method: 'POST' | 'PATCH' | 'DELETE', id?: number, body?: unknown) {

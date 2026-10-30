@@ -1,5 +1,6 @@
 import type { LoginCredentials, SessionUser, TokenResponse } from '../types/auth'
 import { apiRequest, getCsrfToken, isRecord, readApiJson } from './apiClient'
+import { setApiReadScope } from './apiReadCache'
 
 export class AccessDeniedError extends Error {
   constructor() {
@@ -29,15 +30,17 @@ async function sessionUser(response: Response): Promise<SessionUser> {
 export async function getSession(signal?: AbortSignal): Promise<SessionUser | null> {
   // The backend renews an expired/missing access cookie using its HttpOnly refresh cookie.
   const response = await apiRequest('/auth/me', { signal })
-  if (response.status === 401) return null
-  if (response.status === 403) throw new AccessDeniedError()
+  if (response.status === 401) { setApiReadScope(null); return null }
+  if (response.status === 403) { setApiReadScope(null); throw new AccessDeniedError() }
   if (!response.ok) throw new Error('Não foi possível verificar sua sessão. Tente novamente.')
   const user = await sessionUser(response)
-  if (!user.roles.includes('MANAGER')) throw new AccessDeniedError()
+  if (!user.roles.includes('MANAGER')) { setApiReadScope(null); throw new AccessDeniedError() }
+  setApiReadScope(JSON.stringify([user.email, [...user.roles].sort()]))
   return user
 }
 
 export async function logout(): Promise<void> {
+  setApiReadScope(null)
   const response = await apiRequest('/auth/logout', { method: 'POST' })
   if (response.status === 204 || response.status === 401) return
   if (response.status === 403) throw new Error('Não foi possível encerrar a sessão com segurança. Tente sair novamente.')
@@ -45,6 +48,7 @@ export async function logout(): Promise<void> {
 }
 
 export async function login(credentials: LoginCredentials): Promise<SessionUser> {
+  setApiReadScope(null)
   const response = await apiRequest('/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -69,5 +73,6 @@ export async function login(credentials: LoginCredentials): Promise<SessionUser>
     }
     throw new AccessDeniedError()
   }
+  setApiReadScope(JSON.stringify([user.email, [...user.roles].sort()]))
   return user
 }

@@ -23,6 +23,7 @@ async function setup() { render(<TestSession><Restocking /></TestSession>); awai
 function firstRecord() { return within(screen.getByRole('region', { name: 'Registros' })).getAllByRole('button')[0] }
 it('shows real records, filters date and does not invent pending tasks', async () => {
   await setup()
+  expect(api.fetch.mock.calls.some(([url]) => /\/(employees|inventories)\/list$/.test(String(url)))).toBe(false)
   expect(screen.queryByText('Pendentes')).toBeNull()
   fireEvent.change(screen.getByLabelText('Data'), { target: { value: '2026-10-26' } })
   expect(within(screen.getByRole('region', { name: 'Registros' })).queryByText('REP-1')).toBeNull()
@@ -30,6 +31,7 @@ it('shows real records, filters date and does not invent pending tasks', async (
 })
 it('creates, edits and deletes records with numeric IDs and quantity validation', async () => {
   await setup(); fireEvent.click(screen.getByRole('button', { name: 'Criar reposição' }))
+  await screen.findByLabelText('Produto *')
   for (const [label, value] of [['Produto *', '1'], ['Gôndola *', '101'], ['Responsável *', '1'], ['Depósito *', '1']]) fireEvent.change(screen.getByLabelText(label), { target: { value } })
   fireEvent.change(screen.getByLabelText('Avarias *'), { target: { value: '2' } })
   fireEvent.click(screen.getByRole('button', { name: 'Salvar reposição' }))
@@ -39,6 +41,7 @@ it('creates, edits and deletes records with numeric IDs and quantity validation'
   await waitFor(() => expect(db.records).toHaveLength(3))
   await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
   fireEvent.click(firstRecord()); fireEvent.click(screen.getByRole('button', { name: 'Editar registro' }))
+  await screen.findByLabelText('Quantidade *')
   fireEvent.change(screen.getByLabelText('Quantidade *'), { target: { value: '14' } })
   fireEvent.click(screen.getByRole('button', { name: 'Salvar reposição' }))
   await waitFor(() => expect(db.records.find(r => r.id === 3)?.restockedQuantity).toBe(14))

@@ -73,3 +73,20 @@ it('mantém a causa de cancelamento e apresenta mensagem segura para falha de tr
   fetchMock.mockRejectedValueOnce(new TypeError('sensitive technical details'))
   await expect(apiRequest('/products/list')).rejects.toThrow('Não foi possível conectar à loja.')
 })
+
+it('identifica timeout sem tratar a demora como perda de conexão', async () => {
+  fetchMock.mockRejectedValueOnce(new DOMException('sensitive details', 'TimeoutError'))
+  await expect(apiRequest('/employees/list')).rejects.toThrow('A API da loja demorou mais de 15 segundos')
+})
+
+it.each([204, 500])('invalida leituras após uma escrita, inclusive resposta incerta: %s', async status => {
+  const { setApiReadScope, sharedApiRead } = await import('./apiReadCache')
+  setApiReadScope('manager')
+  const load = vi.fn(async () => [])
+  await sharedApiRead('/employees/list', load)
+  fetchMock.mockResolvedValueOnce(Response.json(csrf)).mockResolvedValueOnce(new Response(null, { status }))
+  await apiRequest('/employees/update/1', { method: 'PATCH' })
+  await sharedApiRead('/employees/list', load)
+  expect(load).toHaveBeenCalledTimes(2)
+  setApiReadScope(null)
+})

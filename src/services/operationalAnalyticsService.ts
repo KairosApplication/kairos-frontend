@@ -1,5 +1,5 @@
-import { apiRequest, isRecord, readApiJson } from './apiClient'
-import { ApiHttpError, invalidApiData, parseApiList } from './apiData'
+import { isRecord } from './apiClient'
+import { ApiHttpError, invalidApiData, parseApiList, readApiData } from './apiData'
 import { getStoreCatalog } from './storeCatalogService'
 import type { StoreCatalogDto } from '../types/storeCatalogApi'
 export type ReplenishmentMetric = { id: number; restockingDate: string; restockedQuantity: number; damagedQuantity: number }
@@ -16,11 +16,11 @@ export function summarizeOperations(catalog: StoreCatalogDto, records: Replenish
   const categories = [...new Map(catalog.products.map(p => [p.category.id, p.category.category])).entries()].map(([id, name]) => ({ id, name, count: catalog.products.filter(p => p.category.id === id).length, zeroLinks: zero.filter(l => catalog.products.find(p => p.id === l.productId)?.category.id === id).length })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'pt-BR'))
   return { catalog, days, week, zero, quantity, categories, today, emptyShelves: catalog.shelves.filter(s => !catalog.productShelves.some(l => l.shelfId === s.id)).length, availableLinks: catalog.productShelves.filter(l => l.productQuantity > 0).length }
 }
-async function restocking(signal?: AbortSignal) {
-  try { const response = await apiRequest('/restockings/list', { signal }); if (response.status !== 200) throw new ApiHttpError(response.status); return { records: parseApiList(await readApiJson(response), valid), error: null } }
+export async function getOperationalHistory(signal?: AbortSignal) {
+  try { return { records: parseApiList(await readApiData('/restockings/list', signal), valid), error: null } }
   catch (cause) { if (signal?.aborted || cause instanceof ApiHttpError && cause.status === 401) throw cause; return { records: null, error: cause instanceof Error ? cause : new Error('Reposições indisponíveis.') } }
 }
-export async function getOperationalAnalytics(signal?: AbortSignal) { const [catalog, history] = await Promise.all([getStoreCatalog(signal), restocking(signal)]); return { ...summarizeOperations(catalog, history.records), restockingError: history.error } }
+export async function getOperationalAnalytics(signal?: AbortSignal) { const [catalog, history] = await Promise.all([getStoreCatalog(signal), getOperationalHistory(signal)]); return { ...summarizeOperations(catalog, history.records), restockingError: history.error } }
 export function exportOperations(data: Awaited<ReturnType<typeof getOperationalAnalytics>>) {
   const rows = [['Indicador', 'Valor'], ['Data da consulta', data.today], ['Produtos no catálogo', String(data.catalog.products.length)], ['Gôndolas', String(data.catalog.shelves.length)], ['Unidades nas gôndolas', String(data.quantity)], ['Vínculos sem saldo', String(data.zero.length)], ['Registros nos últimos 7 dias', data.week ? String(data.week.length) : 'Não informado'], ['Data', 'Unidades registradas sem avarias'], ...data.days.map(d => [d.date, data.week ? String(d.value) : 'Não informado'])]
   const csv = '\uFEFF' + rows.map(row => row.map(v => `"${v.replaceAll('"', '""')}"`).join(';')).join('\r\n')
