@@ -148,6 +148,7 @@
 .manager-header__panel li a:hover {
   background: var(--color-background);
 }
+.manager-header__notifications .manager-header__panel li a { display: grid; gap: 6px; overflow-wrap: anywhere; }
 
 .manager-header__profile {
   display: flex;

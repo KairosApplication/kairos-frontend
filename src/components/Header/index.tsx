@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router'
 import { managerPages } from '../../routes/managerPages'
 import { useSessionIdentity } from '../../hooks/useSessionIdentity'
+import Alerts from './Alerts'
 import './styles.css'
 import '../../styles/accessible-names.css'
 
@@ -108,7 +109,7 @@ function Header() {
           {notificationsOpen && (
             <section className="manager-header__panel" id="header-notifications" aria-label="Notificações">
               <h2>Notificações</h2>
-              <p>As notificações ainda não estão disponíveis.</p>
+              <Alerts onNavigate={() => setNotificationsOpen(false)} />
             </section>
           )}
         </div>
