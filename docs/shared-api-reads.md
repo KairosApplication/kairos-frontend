@@ -17,7 +17,7 @@ Dashboard e Insights mostram o catálogo assim que ele chega; os indicadores de 
 
 Central de Reposição consulta inicialmente apenas catálogo e registros. A lista e o filtro identificam os responsáveis pelos IDs disponíveis. Equipe e depósitos são carregados ao abrir o formulário de criação/edição; falhas nessas opções ficam no formulário. Exclusão não exige essas consultas auxiliares.
 
-Consultas GET/HEAD de dados aguardam até 60 segundos por padrão. Configure `VITE_API_READ_TIMEOUT_MS` no `.env.local`, entre 15000 e 300000 milissegundos; por exemplo, `120000` permite dois minutos. Configurações inválidas usam 60000. Reinicie o Vite após alterar o ambiente. Autenticação/CSRF e gravações mantêm 15 segundos. A mensagem de timeout informa o limite aplicado, separadamente da falha de conexão.
+Consultas GET/HEAD de dados e a verificação de sessão (`/auth/me`) aguardam até 60 segundos por padrão. Configure `VITE_API_READ_TIMEOUT_MS` no `.env.local`, entre 15000 e 300000 milissegundos; por exemplo, `120000` permite dois minutos. Configurações inválidas usam 60000. Reinicie o Vite após alterar o ambiente. CSRF, envio do login e demais gravações mantêm 15 segundos. A mensagem de timeout informa o limite aplicado, separadamente da falha de conexão.
 
 ## Medição e limites
 

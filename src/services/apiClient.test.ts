@@ -79,14 +79,14 @@ it('identifica timeout sem tratar a demora como perda de conexão', async () => 
   await expect(apiRequest('/employees/list')).rejects.toThrow('A API da loja demorou mais de 60 segundos')
 })
 
-it('permite maior espera nas consultas sem ampliar o timeout de autenticação e escrita', async () => {
+it('permite maior espera nas consultas e verificação de sessão, mantendo CSRF e escrita em 15 segundos', async () => {
   const timer = vi.spyOn(AbortSignal, 'timeout')
   fetchMock.mockResolvedValueOnce(new Response())
   await apiRequest('/employees/list')
   expect(timer).toHaveBeenLastCalledWith(60000)
   fetchMock.mockResolvedValueOnce(new Response())
   await apiRequest('/auth/me')
-  expect(timer).toHaveBeenLastCalledWith(15000)
+  expect(timer).toHaveBeenLastCalledWith(60000)
   fetchMock.mockResolvedValueOnce(Response.json(csrf)).mockResolvedValueOnce(new Response(null, { status: 204 }))
   await apiRequest('/employees/update/1', { method: 'PATCH' })
   expect(timer.mock.calls.slice(-2)).toEqual([[15000], [15000]])
