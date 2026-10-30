@@ -37,6 +37,10 @@
 .products__catalog .ui-table thead th { font-size: 10px; }
 .products__catalog .ui-table .ui-badge { min-width: 120px; font-size: 10px; }
 .products__details-button { width: 36px; min-height: 36px; padding: 0; }
+.products__row-actions { display: flex; align-items: center; gap: 4px; }
+.products__form { display: grid; gap: 20px; }
+.products__form-error { color: var(--color-danger); font-size: 13px; line-height: 1.6; }
+.products__success { padding: 12px 16px; border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-surface-muted); color: var(--color-text); font-size: 13px; line-height: 1.6; }
 .products__table-footer { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; margin-top: auto; padding-top: 24px; }
 .products__table-footer > p { margin: 0; color: var(--color-text-muted); font-size: 10px; line-height: 1.6; }
 .products__pagination { display: flex; align-items: center; gap: 12px; }
