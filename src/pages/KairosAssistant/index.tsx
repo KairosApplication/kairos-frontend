@@ -1,6 +1,5 @@
 import { useRef, useState, type SubmitEvent } from 'react'
-import { Link } from 'react-router'
-import { ArrowRight, Lightbulb, Plus, Search, Send, ShieldCheck } from 'lucide-react'
+import { Lightbulb, Plus, Search, Send, ShieldCheck } from 'lucide-react'
 import Badge from '../../components/Badge'
 import Button from '../../components/Button'
 import Card from '../../components/Card'
@@ -10,9 +9,16 @@ import VisualPage from '../../components/VisualPage'
 import useDemoData from '../../hooks/useDemoData'
 import { getAssistantView, getDemonstrativeReply } from '../../services/assistantViewService'
 import type { AssistantConversation } from '../../types/assistantView'
+import { chatbotConfigured } from '../../services/chatbotService'
+import AssistantMessageBubble from './AssistantMessageBubble'
+import ConnectedAssistant from './ConnectedAssistant'
 import './styles.css'
 
 export default function KairosAssistant() {
+  return chatbotConfigured() ? <ConnectedAssistant /> : <DemonstrativeAssistant />
+}
+
+function DemonstrativeAssistant() {
   const { data, loading, error, retry } = useDemoData(getAssistantView)
   const [local, setLocal] = useState<AssistantConversation[] | null>(null)
   const [selectedId, setSelectedId] = useState('priority')
@@ -66,13 +72,7 @@ export default function KairosAssistant() {
       <Card title={selected?.title ?? 'Nova conversa'} actions={<Badge tone="warning">KAIROS IA · Demo</Badge>} className="kairos-assistant__chat">
         <div ref={messagesArea} className="kairos-assistant__messages" role="log" aria-label="Mensagens da conversa" aria-live="polite">
           {!selected?.messages.length && <div className="kairos-assistant__empty"><Lightbulb size={28} aria-hidden="true" /><h3>Como podemos cuidar da loja hoje?</h3><p>Experimente perguntar sobre vendas, estoque ou reposições.</p></div>}
-          {selected?.messages.map((message) => <article key={message.id} className={`kairos-message kairos-message--${message.role}`} aria-label={message.role === 'user' ? 'Sua mensagem' : 'Resposta demonstrativa'}>
-            {message.role === 'assistant' && <h3><Lightbulb size={20} aria-hidden="true" />KAIROS IA</h3>}
-            <p>{message.text}</p>
-            {message.items && <><p className="kairos-message__intro">Há 2 produtos em ruptura e unidades disponíveis no depósito.<br />Prioridades do cenário demonstrativo das 14:27:</p><ol>{message.items.map((item) => <li key={item.title}><strong>{item.title}</strong><small>{item.detail}</small></li>)}</ol></>}
-            {message.action && <Link className="kairos-message__action" to={message.action.path}><ArrowRight size={18} aria-hidden="true" />{message.action.label}</Link>}
-            {message.role === 'assistant' && <small className="kairos-message__source">Resposta predefinida · dados demonstrativos, sem consulta a um modelo de IA.</small>}
-          </article>)}
+          {selected?.messages.map((message) => <AssistantMessageBubble key={message.id} message={message} demo />)}
           {pending && <p role="status" className="visual-note">Preparando resposta demonstrativa…</p>}
         </div>
         <form className="kairos-assistant__composer" onSubmit={send}><TextField ref={input} label="Mensagem para KAIROS IA" placeholder="Pergunte sobre vendas, estoque ou reposições…" value={draft} maxLength={1000} onChange={(event) => setDraft(event.target.value)} disabled={pending} /><Button type="submit" aria-label="Enviar mensagem" disabled={!draft.trim() || pending} icon={<Send size={20} />} /></form>
