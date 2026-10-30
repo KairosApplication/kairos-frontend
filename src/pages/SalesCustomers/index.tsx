@@ -1,94 +1,69 @@
-import { useState, type SubmitEvent } from 'react'
-import { ArrowRight, CalendarDays, ChevronDown, Download, Search, ShoppingCart, UsersRound, WalletCards } from 'lucide-react'
-import Badge from '../../components/Badge'
+import { useCallback, useRef, useState, type SubmitEvent } from 'react'
+import { Download, Search } from 'lucide-react'
 import Button from '../../components/Button'
 import Card from '../../components/Card'
 import DataTable, { type TableColumn } from '../../components/DataTable'
 import Feedback from '../../components/Feedback'
 import Modal from '../../components/Modal'
-import SelectField from '../../components/SelectField'
 import TextField from '../../components/TextField'
 import VisualPage from '../../components/VisualPage'
-import useDemoData from '../../hooks/useDemoData'
-import { downloadSalesCsv, getSalesView } from '../../services/salesViewService'
-import type { CustomerView, SaleView } from '../../types/salesView'
+import useApiData from '../../hooks/useApiData'
+import { exportSalesCsv, getCustomers, getPurchaseTotal, getRecommendations, type ApiCustomer } from '../../services/salesApiService'
 import './styles.css'
-
 const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
-const integerCurrency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })
-const normalize = (text: string) => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
-
+function Recommendations({ customer, onClose }: { customer: ApiCustomer; onClose: () => void }) {
+  const loader = useCallback((signal?: AbortSignal) => getRecommendations(customer.id, signal), [customer.id])
+  const { data, error, reload } = useApiData(loader)
+  return <Modal open title={`Recomendações para ${customer.userName}`} onClose={onClose} actions={<Button onClick={onClose}>Fechar</Button>}>
+    {error ? <Feedback kind="error" title="Não foi possível consultar as recomendações." description={error.message} onRetry={() => void reload()} /> : !data ? <Feedback kind="loading" title="Carregando recomendações…" /> : data.length ? <ul>{data.map(p => <li key={p.productId}><strong>{p.productName}</strong><p>{p.categoryName} · Produto {p.productId}</p></li>)}</ul> : <Feedback kind="empty" title="Nenhuma recomendação disponível" />}
+  </Modal>
+}
+function Purchase({ id }: { id: number }) {
+  const loader = useCallback((signal?: AbortSignal) => getPurchaseTotal(id, signal), [id])
+  const { data, error, reload } = useApiData(loader)
+  return error ? <Feedback kind="error" title="Não foi possível consultar a compra." description={error.message} onRetry={() => void reload()} /> : !data ? <Feedback kind="loading" title="Consultando compra…" /> : <Card title={`Compra ${data.purchaseId}`}><p role="status">Total: {currency.format(data.total)}</p></Card>
+}
 export default function SalesCustomers() {
-  const { data, loading, error, retry } = useDemoData(getSalesView)
-  const [tab, setTab] = useState('sales')
+  const { data, error, reload } = useApiData(getCustomers)
+  const [tab, setTab] = useState('customers')
   const [query, setQuery] = useState('')
-  const [payment, setPayment] = useState('all')
-  const [date, setDate] = useState('2026-09-25')
-  const [dateOpen, setDateOpen] = useState(false)
-  const [customerId, setCustomerId] = useState('c1')
-  const [historyOpen, setHistoryOpen] = useState(false)
-  const [sale, setSale] = useState<SaleView | null>(null)
-  const [message, setMessage] = useState('')
-  const [exportFailed, setExportFailed] = useState(false)
-  const customer = data?.customers.find((item) => item.id === customerId)
-  const customerName = (id: string | null) => data?.customers.find((item) => item.id === id)?.name ?? 'Não identificado'
-  const sales = data?.sales.filter((item) => item.date === date && (payment === 'all' || item.payment === payment) && normalize(`${item.id} ${customerName(item.customerId)}`).includes(normalize(query))) ?? []
-  const clients = data?.customers.filter((item) => normalize(`${item.name} ${item.email}`).includes(normalize(query))) ?? []
-  const snapshotDay = date === '2026-09-25'
-  const columns: TableColumn<SaleView>[] = [
-    { key: 'id', header: 'Venda', render: (item) => <button className="sales-customers__text-button" onClick={() => setSale(item)} aria-label={`Ver venda ${item.id}`}>{item.id}</button> },
-    { key: 'time', header: 'Horário', render: (item) => item.time },
-    { key: 'customer', header: 'Cliente', render: (item) => item.customerId ? <button className="sales-customers__text-button sales-customers__customer-name" onClick={() => setCustomerId(item.customerId!)} aria-label={`Selecionar cliente ${customerName(item.customerId)}`}>{customerName(item.customerId)}</button> : 'Não identificado' },
-    { key: 'payment', header: 'Pagamento', render: (item) => item.payment },
-    { key: 'value', header: 'Valor', render: (item) => currency.format(item.value) },
+  const [page, setPage] = useState(1)
+  const [customerId, setCustomerId] = useState<number | null>(null)
+  const [recommendations, setRecommendations] = useState(false)
+  const [purchaseInput, setPurchaseInput] = useState('')
+  const [purchaseId, setPurchaseId] = useState<number | null>(null)
+  const [purchaseError, setPurchaseError] = useState('')
+  const purchaseField = useRef<HTMLInputElement>(null)
+  const [notice, setNotice] = useState('')
+  const [exportError, setExportError] = useState(false)
+  const normalize = (v: string) => v.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+  const filtered = data?.filter(c => normalize(`${c.id} ${c.userId} ${c.userName}`).includes(normalize(query))) ?? []
+  const currentPage = Math.min(page, Math.max(1, Math.ceil(filtered.length / 10)))
+  const customer = data?.find(c => c.id === customerId) ?? data?.[0]
+  const columns: TableColumn<ApiCustomer>[] = [
+    { key: 'id', header: 'ID', render: c => c.id },
+    { key: 'name', header: 'Cliente', render: c => <button type="button" className="sales-customers__text-button" onClick={() => setCustomerId(c.id)}>{c.userName}</button> },
+    { key: 'user', header: 'ID do usuário', render: c => c.userId },
   ]
-  const clientColumns: TableColumn<CustomerView>[] = [
-    { key: 'name', header: 'Cliente', render: (item) => <button className="sales-customers__text-button" onClick={() => setCustomerId(item.id)}>{item.name}</button> },
-    { key: 'email', header: 'E-mail', render: (item) => item.email },
-    { key: 'purchases', header: 'Compras', render: (item) => item.purchases },
-    { key: 'total', header: 'Total no período', render: (item) => currency.format(item.total) },
-  ]
-
-  function exportData() {
-    try {
-      const rows = tab === 'sales' ? [['Venda', 'Data', 'Horário', 'Cliente', 'Pagamento', 'Valor'], ...sales.map((item) => [item.id, item.date, item.time, customerName(item.customerId), item.payment, item.value.toFixed(2).replace('.', ',')])]
-        : [['Cliente', 'E-mail', 'Compras', 'Total'], ...clients.map((item) => [item.name, item.email, String(item.purchases), item.total.toFixed(2).replace('.', ',')])]
-      downloadSalesCsv([['Dados demonstrativos — amostra filtrada'], ...rows]); setExportFailed(false); setMessage('Download dos dados demonstrativos iniciado.')
-    } catch { setExportFailed(true); setMessage('Não foi possível preparar o arquivo. Tente novamente.') }
+  function exportData() { try { exportSalesCsv([['ID', 'Cliente', 'ID do usuário'], ...filtered.map(c => [String(c.id), c.userName, String(c.userId)])], 'kairos-clientes.csv'); setExportError(false); setNotice('Download dos clientes filtrados iniciado.') } catch { setExportError(true); setNotice('Não foi possível exportar os clientes.') } }
+  function searchPurchase(event: SubmitEvent<HTMLFormElement>) {
+    event.preventDefault(); const id = Number(purchaseInput)
+    if (!/^\d+$/.test(purchaseInput) || !Number.isSafeInteger(id) || id <= 0) { setPurchaseError('Informe um ID de compra inteiro e positivo.'); setPurchaseId(null); purchaseField.current?.focus(); return }
+    setPurchaseError(''); setPurchaseId(id)
   }
-  function changeDate(event: SubmitEvent<HTMLFormElement>) { event.preventDefault(); setDate(String(new FormData(event.currentTarget).get('date'))); setDateOpen(false) }
-
-  return <VisualPage title="Vendas & Clientes" description="Consulte transações e conheça o histórico de compras dos seus clientes." className="sales-customers"
-    actions={<Button icon={<Download />} disabled={!data} onClick={exportData}>Exportar dados</Button>}>
-    {message && <p role={exportFailed ? 'alert' : 'status'} className="visual-message">{message}</p>}
-    {error ? <Feedback kind="error" title="Não foi possível carregar vendas e clientes." onRetry={retry} /> : loading || !data ? <Feedback kind="loading" title="Carregando vendas…" /> : <>
-      <div className="sales-customers__tabs"><div className="visual-tabs" role="group" aria-label="Visualização de vendas e clientes"><Button variant="secondary" aria-pressed={tab === 'sales'} onClick={() => { setTab('sales'); setQuery('') }}>Vendas</Button><Button variant="secondary" aria-pressed={tab === 'customers'} onClick={() => { setTab('customers'); setQuery('') }}>Clientes</Button></div><Button variant="secondary" icon={<CalendarDays size={18} />} onClick={() => setDateOpen(true)}>{date.split('-').reverse().join('/')}</Button></div>
+  return <VisualPage title="Vendas & Clientes" description="Consulte clientes, recomendações e o total de uma compra." className="sales-customers" footer="Consultas realizadas na API"
+    actions={<Button icon={<Download />} disabled={!data || tab !== 'customers'} onClick={exportData}>Exportar dados</Button>}>
+    {notice && <p role={exportError ? 'alert' : 'status'}>{notice}</p>}
+    {error ? <Feedback kind="error" title="Não foi possível carregar os clientes." description={error.message} onRetry={() => void reload()} /> : !data ? <Feedback kind="loading" title="Carregando clientes…" /> : <>
+      <div className="sales-customers__tabs"><div className="visual-tabs" role="group" aria-label="Visualização de vendas e clientes"><Button variant="secondary" aria-pressed={tab === 'sales'} onClick={() => setTab('sales')}>Vendas</Button><Button variant="secondary" aria-pressed={tab === 'customers'} onClick={() => setTab('customers')}>Clientes</Button></div></div>
       <div className="sales-customers__layout"><div className="sales-customers__main">
-        <div className="sales-customers__stats">
-          <Card title="Receita do dia" actions={<WalletCards size={18} />}><strong>{integerCurrency.format(snapshotDay ? data.summary.revenue : 0)}</strong><p>{snapshotDay ? '+ 9,7% em relação a ontem' : 'Sem dados neste dia da demonstração'}</p></Card>
-          <Card title="Vendas realizadas" actions={<ShoppingCart size={18} />}><strong>{snapshotDay ? data.summary.count : 0}</strong><p>Ticket médio de {currency.format(snapshotDay ? data.summary.average : 0)}</p></Card>
-          <Card title="Clientes identificados" actions={<UsersRound size={18} />}><strong>{snapshotDay ? data.summary.identified : 0}</strong><p>{snapshotDay ? '43,5% das vendas do dia' : 'Sem vendas na amostra deste dia'}</p></Card>
-        </div>
-        <div className="visual-toolbar"><TextField label="Buscar venda ou cliente" type="search" placeholder="Buscar venda ou cliente" icon={<Search size={18} />} value={query} onChange={(event) => setQuery(event.target.value)} />
-          {tab === 'sales' && <div className="visual-filter-select"><SelectField label="Pagamento" value={payment} onChange={(event) => setPayment(event.target.value)}><option value="all">Pagamento</option>{['Pix', 'Crédito', 'Débito'].map((item) => <option key={item}>{item}</option>)}</SelectField><ChevronDown size={18} aria-hidden="true" /></div>}
-        </div>
-        <Card title={tab === 'sales' ? 'Vendas recentes' : 'Clientes da loja'} className="sales-customers__table">
-          {tab === 'sales' ? <DataTable caption="Amostra de vendas demonstrativas" rows={sales} columns={columns} rowKey={(item) => item.id} emptyTitle="Nenhuma venda encontrada" /> : <DataTable caption="Clientes demonstrativos" rows={clients} columns={clientColumns} rowKey={(item) => item.id} emptyTitle="Nenhum cliente encontrado" />}
-        </Card>
-      </div>
-      <Card title="Cliente selecionado" className="sales-customers__customer">
-        {customer && <><span className="sales-customers__avatar">{customer.name.split(' ').map((part) => part[0]).slice(0, 2).join('')}</span><h3>{customer.name}</h3><Badge tone="success">Cliente recorrente</Badge>
-          <p className="sales-customers__label">Última compra</p><strong className="sales-customers__last">25 set, às {customer.lastPurchase}</strong><div className="sales-customers__history"><h4>Histórico de consumo</h4><strong>{customer.purchases} compras</strong><p>{currency.format(customer.total)} no período</p></div>
-          <p className="sales-customers__label">Categorias frequentes</p><div className="sales-customers__badges">{customer.categories.map((category, index) => <Badge key={category} tone={index ? 'warning' : 'success'}>{category}</Badge>)}</div>
-          <Button variant="secondary" icon={<ArrowRight size={18} />} onClick={() => setHistoryOpen(true)}>Ver histórico</Button></>}
-      </Card></div>
-      <Modal open={historyOpen} onClose={() => setHistoryOpen(false)} title={`Histórico de ${customer?.name ?? 'cliente'}`} description="Amostra de transações fictícias. Os totais do perfil representam um resumo ilustrativo do período." actions={<Button variant="secondary" onClick={() => setHistoryOpen(false)}>Fechar</Button>}>
-        <ul className="sales-customers__history-list">{data.sales.filter((item) => item.customerId === customerId).map((item) => <li key={item.id}><strong>{item.id} · {item.time}</strong><span>{item.payment} · {currency.format(item.value)}</span></li>)}</ul>
-      </Modal>
+        <div className="sales-customers__stats"><Card title="Clientes retornados"><strong>{data.length}</strong></Card><Card title="Receita por período"><strong>—</strong><p>Não disponível nesta consulta.</p></Card><Card title="Histórico de compras"><strong>—</strong><p>Não disponível nesta consulta.</p></Card></div>
+        {tab === 'customers' ? <><div className="visual-toolbar"><TextField label="Buscar cliente ou ID" type="search" icon={<Search />} value={query} onChange={e => { setQuery(e.target.value); setPage(1) }} /></div>
+          <Card title="Clientes" className="sales-customers__table"><DataTable caption="Clientes retornados pela API" rows={filtered.slice((currentPage - 1) * 10, currentPage * 10)} columns={columns} rowKey={c => String(c.id)} emptyTitle="Nenhum cliente encontrado" />
+            <nav aria-label="Paginação dos clientes" className="sales-customers__pagination"><Button variant="secondary" disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)}>Anterior</Button><span aria-current="page">{currentPage}</span><Button variant="secondary" disabled={currentPage * 10 >= filtered.length} onClick={() => setPage(currentPage + 1)}>Próxima</Button></nav>
+          </Card></> : <Card title="Consultar total da compra"><p>Informe o ID de uma compra para consultar seu total. Data, pagamento e histórico não são fornecidos neste endpoint.</p><form className="visual-form" onSubmit={searchPurchase} noValidate><TextField ref={purchaseField} label="ID da compra" inputMode="numeric" required value={purchaseInput} error={purchaseError} onChange={e => { setPurchaseInput(e.target.value); setPurchaseError('') }} /><Button type="submit">Consultar compra</Button></form>{purchaseId && <Purchase key={purchaseId} id={purchaseId} />}</Card>}
+      </div><Card title="Cliente selecionado" className="sales-customers__customer">{customer ? <><h3>{customer.userName}</h3><p>ID {customer.id}</p><p>Usuário {customer.userId}</p><Button variant="secondary" onClick={() => setRecommendations(true)}>Ver recomendações</Button></> : <p>Nenhum cliente disponível.</p>}</Card></div>
+      {recommendations && customer && <Recommendations customer={customer} onClose={() => setRecommendations(false)} />}
     </>}
-    <Modal open={Boolean(sale)} onClose={() => setSale(null)} title={`Venda ${sale?.id ?? ''}`} description="Transação demonstrativa, sem movimentação financeira." actions={<Button variant="secondary" onClick={() => setSale(null)}>Fechar</Button>}>
-      {sale && <dl className="visual-details"><div><dt>Cliente</dt><dd>{customerName(sale.customerId)}</dd></div><div><dt>Horário</dt><dd>{sale.time}</dd></div><div><dt>Pagamento</dt><dd>{sale.payment}</dd></div><div><dt>Valor</dt><dd>{currency.format(sale.value)}</dd></div></dl>}
-    </Modal>
-    <Modal open={dateOpen} onClose={() => setDateOpen(false)} title="Selecionar dia" description="A amostra possui transações somente em 25/09/2026." actions={<Button type="submit" form="sales-date">Aplicar</Button>}><form id="sales-date" onSubmit={changeDate}><TextField name="date" type="date" label="Data das vendas" defaultValue={date} required /></form></Modal>
   </VisualPage>
 }
