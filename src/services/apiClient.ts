@@ -20,9 +20,11 @@ async function send(path: `/${string}`, options: ApiRequestOptions = {}): Promis
   options.signal?.throwIfAborted()
   const configured = Number(import.meta.env.VITE_API_READ_TIMEOUT_MS || 60000)
   const readTimeout = Number.isInteger(configured) && configured >= 15000 && configured <= 300000 ? configured : 60000
-  const extendedRead = ['GET', 'HEAD'].includes((options.method ?? 'GET').toUpperCase())
-    && (!path.startsWith('/auth/') || path === '/auth/me')
-  const timeoutMs = extendedRead ? readTimeout : 15000
+  const method = (options.method ?? 'GET').toUpperCase()
+  const extendedRead = ['GET', 'HEAD'].includes(method)
+    && (!path.startsWith('/auth/') || path === '/auth/me' || path === '/auth/login')
+  const login = path === '/auth/login' && method === 'POST'
+  const timeoutMs = extendedRead || login ? readTimeout : 15000
   const timeout = AbortSignal.timeout(timeoutMs)
   try {
     return await fetch(`${apiBaseUrl}/api/v1${path}`, {

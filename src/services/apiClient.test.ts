@@ -79,7 +79,7 @@ it('identifica timeout sem tratar a demora como perda de conexão', async () => 
   await expect(apiRequest('/employees/list')).rejects.toThrow('A API da loja demorou mais de 60 segundos')
 })
 
-it('permite maior espera nas consultas e verificação de sessão, mantendo CSRF e escrita em 15 segundos', async () => {
+it('permite maior espera nas consultas, sessão e login, mantendo escritas de negócio em 15 segundos', async () => {
   const timer = vi.spyOn(AbortSignal, 'timeout')
   fetchMock.mockResolvedValueOnce(new Response())
   await apiRequest('/employees/list')
@@ -89,7 +89,11 @@ it('permite maior espera nas consultas e verificação de sessão, mantendo CSRF
   expect(timer).toHaveBeenLastCalledWith(60000)
   fetchMock.mockResolvedValueOnce(Response.json(csrf)).mockResolvedValueOnce(new Response(null, { status: 204 }))
   await apiRequest('/employees/update/1', { method: 'PATCH' })
-  expect(timer.mock.calls.slice(-2)).toEqual([[15000], [15000]])
+  expect(timer.mock.calls.slice(-2)).toEqual([[60000], [15000]])
+  fetchMock.mockResolvedValueOnce(Response.json(csrf)).mockResolvedValueOnce(new Response())
+  await apiRequest('/auth/login', { method: 'POST' })
+  expect(timer.mock.calls.slice(-2)).toEqual([[60000], [60000]])
+  expect(fetchMock.mock.calls.filter(([url, options]) => String(url).endsWith('/auth/login') && options?.method === 'POST')).toHaveLength(1)
 })
 
 it.each([['120000', 120000], ['0', 60000], ['Infinity', 60000], ['300001', 60000]])('valida o timeout configurado: %s', async (value, expected) => {
