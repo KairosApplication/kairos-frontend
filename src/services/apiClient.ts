@@ -18,7 +18,11 @@ export async function readApiJson(response: Response): Promise<unknown> {
 
 async function send(path: `/${string}`, options: ApiRequestOptions = {}): Promise<Response> {
   options.signal?.throwIfAborted()
-  const timeout = AbortSignal.timeout(15000)
+  const configured = Number(import.meta.env.VITE_API_READ_TIMEOUT_MS || 60000)
+  const readTimeout = Number.isInteger(configured) && configured >= 15000 && configured <= 300000 ? configured : 60000
+  const businessRead = ['GET', 'HEAD'].includes((options.method ?? 'GET').toUpperCase()) && !path.startsWith('/auth/')
+  const timeoutMs = businessRead ? readTimeout : 15000
+  const timeout = AbortSignal.timeout(timeoutMs)
   try {
     return await fetch(`${apiBaseUrl}/api/v1${path}`, {
       ...options,
@@ -32,7 +36,7 @@ async function send(path: `/${string}`, options: ApiRequestOptions = {}): Promis
   } catch (error: unknown) {
     if (options.signal?.aborted) throw error
     if (timeout.aborted || error instanceof Error && error.name === 'TimeoutError') {
-      throw new Error('A API da loja demorou mais de 15 segundos para responder. Aguarde antes de tentar novamente.', { cause: error })
+      throw new Error(`A API da loja demorou mais de ${Math.ceil(timeoutMs / 1000)} segundos para responder. Aguarde antes de tentar novamente.`, { cause: error })
     }
     throw new Error('Não foi possível conectar à loja. Verifique sua conexão e tente novamente.', { cause: error })
   }

@@ -17,7 +17,7 @@ Dashboard e Insights mostram o catálogo assim que ele chega; os indicadores de 
 
 Central de Reposição consulta inicialmente apenas catálogo e registros. A lista e o filtro identificam os responsáveis pelos IDs disponíveis. Equipe e depósitos são carregados ao abrir o formulário de criação/edição; falhas nessas opções ficam no formulário. Exclusão não exige essas consultas auxiliares.
 
-Um timeout de transporte informa que a API demorou mais de 15 segundos, separadamente da mensagem de falha de conexão. O tempo de espera não foi aumentado.
+Consultas GET/HEAD de dados aguardam até 60 segundos por padrão. Configure `VITE_API_READ_TIMEOUT_MS` no `.env.local`, entre 15000 e 300000 milissegundos; por exemplo, `120000` permite dois minutos. Configurações inválidas usam 60000. Reinicie o Vite após alterar o ambiente. Autenticação/CSRF e gravações mantêm 15 segundos. A mensagem de timeout informa o limite aplicado, separadamente da falha de conexão.
 
 ## Medição e limites
 
@@ -33,4 +33,4 @@ Teste de navegador com HTTP simulado, navegação SPA dentro da validade dos dad
 
 Abrir o formulário acrescenta uma consulta de equipe e uma de depósitos. Abrir Funcionários em seguida reutiliza a equipe. Chamadas de autenticação não entram nessa contagem e continuam revalidando a sessão.
 
-Essa medição verifica o número de chamadas, não o tempo da API real. Uma primeira listagem que excede 15 segundos ainda pode falhar; listagens completas e consultas individuais no Spring precisam ser otimizadas pelo responsável pelo backend. Nenhum repositório externo foi alterado.
+Essa medição verifica o número de chamadas, não o tempo da API real. Uma primeira listagem que excede o timeout configurado ainda pode falhar; listagens completas e consultas individuais no Spring precisam ser otimizadas pelo responsável pelo backend. Aumentar a espera permite aguardar respostas mais lentas, mas não acelera as consultas. Nenhum repositório externo foi alterado.

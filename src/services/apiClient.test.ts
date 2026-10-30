@@ -11,7 +11,7 @@ beforeEach(async () => {
   fetchMock.mockReset()
   apiRequest = (await import('./apiClient')).apiRequest
 })
-afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs() })
+afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.unstubAllEnvs() })
 
 it.each(['GET', 'HEAD', 'OPTIONS'])('lê com %s, cookies e timeout sem requisitar CSRF', async (method) => {
   fetchMock.mockResolvedValueOnce(new Response())
@@ -76,7 +76,28 @@ it('mantém a causa de cancelamento e apresenta mensagem segura para falha de tr
 
 it('identifica timeout sem tratar a demora como perda de conexão', async () => {
   fetchMock.mockRejectedValueOnce(new DOMException('sensitive details', 'TimeoutError'))
-  await expect(apiRequest('/employees/list')).rejects.toThrow('A API da loja demorou mais de 15 segundos')
+  await expect(apiRequest('/employees/list')).rejects.toThrow('A API da loja demorou mais de 60 segundos')
+})
+
+it('permite maior espera nas consultas sem ampliar o timeout de autenticação e escrita', async () => {
+  const timer = vi.spyOn(AbortSignal, 'timeout')
+  fetchMock.mockResolvedValueOnce(new Response())
+  await apiRequest('/employees/list')
+  expect(timer).toHaveBeenLastCalledWith(60000)
+  fetchMock.mockResolvedValueOnce(new Response())
+  await apiRequest('/auth/me')
+  expect(timer).toHaveBeenLastCalledWith(15000)
+  fetchMock.mockResolvedValueOnce(Response.json(csrf)).mockResolvedValueOnce(new Response(null, { status: 204 }))
+  await apiRequest('/employees/update/1', { method: 'PATCH' })
+  expect(timer.mock.calls.slice(-2)).toEqual([[15000], [15000]])
+})
+
+it.each([['120000', 120000], ['0', 60000], ['Infinity', 60000], ['300001', 60000]])('valida o timeout configurado: %s', async (value, expected) => {
+  vi.stubEnv('VITE_API_READ_TIMEOUT_MS', value)
+  const timer = vi.spyOn(AbortSignal, 'timeout')
+  fetchMock.mockResolvedValueOnce(new Response())
+  await apiRequest('/customers/list')
+  expect(timer).toHaveBeenLastCalledWith(expected)
 })
 
 it.each([204, 500])('invalida leituras após uma escrita, inclusive resposta incerta: %s', async status => {
