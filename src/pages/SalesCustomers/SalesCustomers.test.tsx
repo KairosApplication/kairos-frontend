@@ -1,49 +1,44 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
-import { afterEach, expect, it, vi } from 'vitest'
-import SalesCustomers from './index'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import TestSession from '../../test/TestSession'
 import { mockDialogs } from '../../test/dialog'
-import { downloadSalesCsv } from '../../services/salesViewService'
-vi.mock('../../services/salesViewService', async (original) => ({ ...await original<typeof import('../../services/salesViewService')>(), downloadSalesCsv: vi.fn() }))
+import { handleSales } from '../../test/salesApiFixture'
+import { salesCsv } from '../../services/salesApiService'
+import SalesCustomers from './index'
 mockDialogs()
-afterEach(() => { cleanup(); vi.clearAllMocks() })
-
-it('combina pagamento e busca, exportando somente as transações filtradas', async () => {
-  render(<SalesCustomers />)
-  await screen.findByRole('table')
-  fireEvent.change(screen.getByRole('combobox', { name: 'Pagamento' }), { target: { value: 'Pix' } })
+let fetch: ReturnType<typeof vi.fn<typeof globalThis.fetch>>
+beforeEach(() => {
+  fetch = vi.fn<typeof globalThis.fetch>(async input => { const result = handleSales('GET', new URL(String(input)).pathname.replace('/api/v1', '')); return Response.json(result?.json ?? {}, { status: result?.status ?? 404 }) })
+  vi.stubGlobal('fetch', fetch)
+})
+afterEach(() => { cleanup(); vi.unstubAllGlobals() })
+async function setup() { render(<TestSession><SalesCustomers /></TestSession>); await screen.findByRole('table') }
+it('searches real customers and queries recommendations without inventing purchase histories', async () => {
+  await setup()
   fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'maria' } })
-  expect(within(screen.getByRole('table')).getAllByRole('row')).toHaveLength(3)
-  fireEvent.click(screen.getByRole('button', { name: 'Exportar dados' }))
-  expect(vi.mocked(downloadSalesCsv).mock.calls[0][0]).toHaveLength(4)
-  expect(screen.getByText(/Download dos dados demonstrativos iniciado/)).toBeTruthy()
-  fireEvent.click(screen.getByRole('button', { name: 'Clientes' }))
-  expect(screen.getByRole('table').textContent).toContain('maria@kairos.example')
+  expect(screen.getByRole('button', { name: 'Maria Souza' })).toBeTruthy()
+  expect(screen.queryByRole('button', { name: 'Carlos Lima' })).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: 'Maria Souza' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Ver recomendações' }))
+  await screen.findByText('Coca-Cola 2 L')
+  expect(screen.queryByText('12 compras')).toBeNull()
 })
-
-it('seleciona cliente e consulta histórico sem misturar perfis', async () => {
-  render(<SalesCustomers />)
-  const trigger = await screen.findByRole('button', { name: 'Selecionar cliente Carlos Lima' })
-  fireEvent.click(trigger)
-  const panel = screen.getByRole('region', { name: 'Cliente selecionado' })
-  expect(within(panel).getByRole('heading', { name: 'Carlos Lima' })).toBeTruthy()
-  const history = within(panel).getByRole('button', { name: 'Ver histórico' })
-  history.focus(); fireEvent.click(history)
-  const dialog = screen.getByRole('dialog', { name: 'Histórico de Carlos Lima' })
-  expect(within(dialog).getByText('#00426 · 14:22')).toBeTruthy()
-  fireEvent.keyDown(dialog, { key: 'Escape' })
-  expect(document.activeElement).toBe(history)
+it('validates IDs and consults the total returned for the selected purchase', async () => {
+  await setup(); fireEvent.click(screen.getByRole('button', { name: 'Vendas' }))
+  fireEvent.change(screen.getByLabelText('ID da compra *'), { target: { value: '-1' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Consultar compra' }))
+  expect(screen.getByLabelText('ID da compra *').getAttribute('aria-invalid')).toBe('true')
+  fireEvent.change(screen.getByLabelText('ID da compra *'), { target: { value: '428' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Consultar compra' }))
+  await screen.findByText('Total: R$ 126,40', { exact: false, normalizer: v => v.replace(/\u00a0/g, ' ') })
+  expect(fetch.mock.calls.some(([url]) => String(url).endsWith('/purchases/428/total'))).toBe(true)
 })
-
-it('troca a data e apresenta ausência de vendas fora do dia demonstrativo', async () => {
-  render(<SalesCustomers />)
-  await screen.findByRole('table')
-  fireEvent.click(screen.getByRole('button', { name: '25/09/2026' }))
-  const dateField = within(screen.getByRole('dialog', { name: 'Selecionar dia' })).getByLabelText(/^Data das vendas\s*\*?$/)
-  expect(dateField).toHaveProperty('required', true)
-  expect(dateField.getAttribute('type')).toBe('date')
-  fireEvent.change(dateField, { target: { value: '2026-09-24' } })
-  fireEvent.click(screen.getByRole('button', { name: 'Aplicar' }))
-  expect(screen.getByText('Nenhuma venda encontrada')).toBeTruthy()
-  expect(screen.getByText('Sem dados neste dia da demonstração')).toBeTruthy()
+it('shows API permission errors instead of demonstration records', async () => {
+  fetch.mockResolvedValue(Response.json({}, { status: 403 }))
+  render(<TestSession><SalesCustomers /></TestSession>); await screen.findByRole('alert')
+  expect(screen.queryByRole('table')).toBeNull()
+})
+it('quotes CSV safely and prevents formulas in names from executing in spreadsheets', () => {
+  expect(salesCsv([['=1+1', 'Nome "teste"', 'Normal']])).toContain('"\'=1+1";"Nome ""teste""";"Normal"')
 })
