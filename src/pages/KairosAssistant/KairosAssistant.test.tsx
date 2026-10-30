@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import TestSession from '../../test/TestSession'
 import { chatId, handleChat, makeChatFixture } from '../../test/assistantApiFixture'
@@ -55,4 +55,30 @@ it('keeps the draft after a known rejection and renders model text as plain text
   await screen.findByRole('alert')
   await waitFor(() => expect((screen.getByRole('textbox', { name: 'Mensagem para KAIROS IA' }) as HTMLInputElement).value).toBe('<script>alert(1)</script>'))
   expect(document.querySelector('script')).toBeNull()
+})
+
+it('keeps sources attached to their own persisted reply when switching conversations', async () => {
+  const second = '000000000000000000000002'
+  db.conversations.push({ id: second, status: 'ACTIVE', messages: [{ sender: 'AI', content: 'Preferência salva', sources: ['memory', 'private.collection'] }] })
+  await setup()
+  expect(screen.getByText('Documento PDF')).toBeTruthy()
+  fireEvent.change(screen.getByRole('textbox', { name: 'Mensagem para KAIROS IA' }), { target: { value: 'Consulte o estoque' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Enviar mensagem' }))
+  const answer = await screen.findByText('Resposta recebida do serviço de IA.')
+  const bubble = within(answer.closest('article')!)
+  expect(bubble.getByText('Banco de dados')).toBeTruthy()
+  expect(bubble.queryByText('Documento PDF')).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: /Conversa 000002/ }))
+  await screen.findByText('Preferência salva')
+  expect(screen.getByText('Memória')).toBeTruthy()
+  expect(screen.queryByText('Banco de dados')).toBeNull()
+  expect(screen.queryByText('Documento PDF')).toBeNull()
+  expect(screen.queryByText(/private.collection/)).toBeNull()
+})
+
+it('omits the source section for old replies without recorded sources', async () => {
+  db.conversations[0].messages[0].sources = []
+  await setup()
+  expect(screen.queryByLabelText('Fontes consultadas')).toBeNull()
+  expect(screen.queryByText(/Dados demonstrativos|Demo/)).toBeNull()
 })

@@ -10,12 +10,18 @@ test('personal chat creates a conversation and loads the persisted response', as
   await expect(page.getByRole('log')).toContainText('Resposta recebida do serviço de IA.')
   await expect(page.getByRole('textbox', { name: 'Mensagem para KAIROS IA' })).toHaveValue('')
   await expect(page.getByRole('textbox', { name: 'Mensagem para KAIROS IA' })).toBeFocused()
+  const answer = page.getByRole('article').filter({ hasText: 'Resposta recebida do serviço de IA.' })
+  await expect(answer.getByText('Banco de dados', { exact: true })).toBeVisible()
+  await page.reload()
+  await page.getByRole('navigation', { name: 'Conversas', exact: true }).getByRole('button', { name: /Conversa 000002/ }).click()
+  await expect(page.getByRole('log').getByText('Banco de dados', { exact: true })).toBeVisible()
 })
 test('@a11y personal chat messages and controls work in both themes', async ({ page }) => {
   await mockSession(page); await page.setViewportSize({ width: 320, height: 844 })
   for (const theme of ['light', 'dark'] as const) {
     await preferredTheme(page, theme); await page.goto('/kairos-ia')
     await expect(page.getByRole('log')).toContainText('Como posso ajudar na operação?')
+    await expect(page.getByText('Documento PDF', { exact: true })).toBeVisible()
     expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()).violations).toEqual([])
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   }

@@ -1,5 +1,5 @@
 export const chatId = '000000000000000000000001'
-export function makeChatFixture() { return { conversations: [{ id: chatId, status: 'ACTIVE', messages: [{ sender: 'AI', content: 'Como posso ajudar na operação?' }] as { sender: string; content: string }[] }] } }
+export function makeChatFixture() { return { conversations: [{ id: chatId, status: 'ACTIVE', messages: [{ sender: 'AI', content: 'Como posso ajudar na operação?', sources: ['pdf'] }] as { sender: string; content: string; sources?: string[] }[] }] } }
 export function handleChat(db: ReturnType<typeof makeChatFixture>, method: string, pathname: string, body?: unknown): { status: number; json?: unknown } | null {
   const path = pathname.replace('/api/v1/me/chat', '')
   if (!pathname.startsWith('/api/v1/me/chat')) return null
@@ -10,8 +10,8 @@ export function handleChat(db: ReturnType<typeof makeChatFixture>, method: strin
     const data = body as { question: string; conversationId: string }
     const c = db.conversations.find(c => c.id === data.conversationId)
     if (!c) return { status: 404, json: {} }
-    c.messages.push({ sender: 'USER', content: data.question }, { sender: 'AI', content: 'Resposta recebida do serviço de IA.' })
-    return { status: 200, json: { answer: 'Resposta recebida do serviço de IA.', conversationId: c.id, executionId: '000000000000000000000099', blocked: false, approved: true } }
+    c.messages.push({ sender: 'USER', content: data.question }, { sender: 'AI', content: 'Resposta recebida do serviço de IA.', sources: ['database'] })
+    return { status: 200, json: { answer: 'Resposta recebida do serviço de IA.', conversationId: c.id, executionId: '000000000000000000000099', blocked: false, approved: true, sources: ['database'] } }
   }
   return null
 }

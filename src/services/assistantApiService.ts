@@ -1,13 +1,15 @@
 import { apiRequest, getCsrfToken, isRecord, readApiJson } from './apiClient'
 import { ApiHttpError, invalidApiData } from './apiData'
+import type { AnswerSource } from '../types/assistantView'
+import { publicSources } from './assistantSources'
 export type ChatConversation = { id: string; status: string; createdAt?: string | null; updatedAt?: string | null }
-export type ChatMessage = { sender: string; content: string; timestamp?: string | null }
+export type ChatMessage = { sender: string; content: string; timestamp?: string | null; sources?: AnswerSource[] }
 export type ChatHistory = { id: string; status: string; summary?: string | null; messages: ChatMessage[] }
 const objectId = (v: unknown): v is string => typeof v === 'string' && /^[a-f\d]{24}$/i.test(v)
 const text = (v: unknown): v is string => typeof v === 'string' && !!v.trim()
 export class ChatUncertainError extends Error { constructor() { super('Não foi possível confirmar a operação. Atualize a conversa antes de tentar novamente.') } }
 function origin() {
-  const url = new URL(import.meta.env.VITE_AI_BASE_URL || 'http://localhost:8000')
+  const url = new URL(import.meta.env.VITE_CHATBOT_API_URL?.trim() || import.meta.env.VITE_AI_BASE_URL?.trim() || 'http://localhost:8000')
   if (url.username || url.password || url.search || url.hash || url.pathname !== '/' || url.protocol !== 'https:' && !(url.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname))) throw new Error('Configure uma origem válida para o serviço de IA.')
   return url.origin
 }
@@ -34,7 +36,9 @@ export async function getConversation(id: string, signal?: AbortSignal): Promise
   if (!objectId(id)) throw new Error('Conversa inválida.')
   const value = await request(`/conversations/${id}`, 'GET', undefined, signal)
   if (!isRecord(value) || value.id !== id || !text(value.status) || !Array.isArray(value.messages) || !value.messages.every((v): v is ChatMessage => isRecord(v) && text(v.sender) && typeof v.content === 'string')) invalidApiData()
-  return { id, status: value.status, messages: value.messages }
+  return { id, status: value.status, messages: value.messages.map(m => ({ sender: m.sender, content: m.content,
+    timestamp: typeof m.timestamp === 'string' ? m.timestamp : null,
+    sources: ['AI', 'ASSISTANT'].includes(m.sender.toUpperCase()) ? publicSources(m.sources) : [] })) }
 }
 export async function createConversation(signal?: AbortSignal): Promise<string> {
   const value = await request('/conversations', 'POST', undefined, signal)
@@ -45,5 +49,6 @@ export async function sendChatMessage(conversationId: string, question: string, 
   if (!objectId(conversationId) || !question.trim() || question.length > 10000) throw new Error('Informe uma mensagem de até 10000 caracteres.')
   const value = await request('/messages', 'POST', { question: question.trim(), conversationId }, signal)
   if (!isRecord(value) || value.conversationId !== conversationId || !objectId(value.executionId) || !text(value.answer) || typeof value.blocked !== 'boolean' || typeof value.approved !== 'boolean') throw new ChatUncertainError()
-  return { answer: value.answer, blocked: value.blocked, approved: value.approved }
+  return { answer: value.answer, blocked: value.blocked, approved: value.approved,
+    sources: value.approved && !value.blocked ? publicSources(value.sources) : [] }
 }

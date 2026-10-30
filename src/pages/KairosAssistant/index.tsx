@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type SubmitEvent } from 'react'
-import { Lightbulb, Plus, Send } from 'lucide-react'
+import { Plus, Send } from 'lucide-react'
 import Button from '../../components/Button'
 import Card from '../../components/Card'
 import Feedback from '../../components/Feedback'
@@ -9,6 +9,7 @@ import useApiData from '../../hooks/useApiData'
 import { useAuth } from '../../hooks/useAuth'
 import { ApiHttpError } from '../../services/apiData'
 import { ChatUncertainError, createConversation, getConversation, getConversations, sendChatMessage } from '../../services/assistantApiService'
+import AssistantMessageBubble from './AssistantMessageBubble'
 import './styles.css'
 function Conversation({ id, onBusy }: { id: string; onBusy: (busy: boolean) => void }) {
   const loader = useCallback((signal?: AbortSignal) => getConversation(id, signal), [id])
@@ -43,7 +44,7 @@ function Conversation({ id, onBusy }: { id: string; onBusy: (busy: boolean) => v
     {error ? <Feedback kind="error" title="Não foi possível carregar a conversa." description={error.message} onRetry={() => void reload()} /> : !data ? <Feedback kind="loading" title="Carregando conversa…" /> : <>
       <div role="log" aria-label="Mensagens da conversa" aria-live="polite" aria-relevant="additions text" className="kairos-assistant__messages">
         {!data.messages.length && <p>Como podemos cuidar da loja hoje?</p>}
-        {data.messages.filter(m => ['USER', 'AI', 'ASSISTANT'].includes(m.sender.toUpperCase())).map((m, i) => <article key={`${i}-${m.sender}`} className={`kairos-message kairos-message--${m.sender.toUpperCase() === 'USER' ? 'user' : 'assistant'}`} aria-label={m.sender.toUpperCase() === 'USER' ? 'Sua mensagem' : 'Resposta da KAIROS IA'}>{m.sender.toUpperCase() !== 'USER' && <h3><Lightbulb size={20} aria-hidden="true" />KAIROS IA</h3>}<p>{m.content}</p></article>)}
+        {data.messages.filter(m => ['USER', 'AI', 'ASSISTANT'].includes(m.sender.toUpperCase())).map((m, i) => <AssistantMessageBubble key={`${i}-${m.sender}`} message={{ id: `${i}-${m.sender}`, role: m.sender.toUpperCase() === 'USER' ? 'user' : 'assistant', text: m.content, sources: m.sources }} />)}
       </div>
       {busy && <p role="status">Aguardando resposta da KAIROS IA…</p>}
       <form className="kairos-assistant__composer" onSubmit={send}><TextField ref={input} label="Mensagem para KAIROS IA" maxLength={10000} value={draft} disabled={busy} onChange={e => setDraft(e.target.value)} /><Button type="submit" aria-label="Enviar mensagem" disabled={!draft.trim() || busy} icon={<Send />} /></form>

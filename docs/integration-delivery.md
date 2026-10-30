@@ -21,7 +21,7 @@ Rodada de 27/10/2026. As PRs foram preparadas independentemente a partir da main
 - Reposições são registros de quantidade e avarias. Não há estados de tarefa ou atribuição pendente para representar no quadro.
 - Vendas fornece somente total por ID da compra. Receita por período, pagamento e histórico por cliente não podem ser preenchidos por esse contrato.
 - Nome/empresa do gerente, edição de perfil/loja, outras sessões, recuperação de senha e preferências de notificações não estão expostos por contratos suficientes. A interface evita gravações simuladas.
-- O chat Python possui contrato pessoal e persistência via `kairos-api-ia`. Sua ponte de sessão consultada usa JSESSIONID e precisa ser compatibilizada com os cookies JWT/CSRF do Spring antes de validar o acesso real. O frontend não recebe chaves de modelo ou tokens internos.
+- O chat Python possui contrato pessoal e persistência via `kairos-api-ia`. A incompatibilidade inicial com JSESSIONID foi tratada nas PRs externas `kairos-api-ia#8` e `kairos-inteligencia-artificial#9`, já mergeadas: a ponte encaminha os cookies JWT/CSRF do Spring e suas renovações. A homologação real depende dos serviços atualizados e das configurações de host/cookies/CORS. O frontend não recebe chaves de modelo ou tokens internos. Ver [contrato do chat e fontes](assistant-chat-api.md).
 
 ## Alertas
 
