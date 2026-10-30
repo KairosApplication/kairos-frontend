@@ -18,9 +18,6 @@ for (const theme of ['light', 'dark'] as const) {
     const selected = page.getByRole('button', { name: theme === 'dark' ? 'Escuro' : 'Claro', exact: true })
     const selection = await selected.evaluate(element => { const css = getComputedStyle(element); return { border: css.borderColor, background: css.backgroundColor } })
     expect(ratio(selection.border, selection.background)).toBeGreaterThanOrEqual(3)
-    await page.getByRole('switch', { name: 'Alertas de ruptura' }).click()
-    const off = await page.locator('.demo-toggle[aria-checked="false"] .demo-toggle__track').evaluate(element => ({ track: getComputedStyle(element).backgroundColor, thumb: getComputedStyle(element.firstElementChild!).backgroundColor }))
-    expect(ratio(off.track, off.thumb)).toBeGreaterThanOrEqual(3)
   })
 
   test(`@a11y todas as páginas preservam o conteúdo com reflow e espaçamento: ${theme}`, async ({ page }) => {

@@ -1,95 +1,35 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
-import { MemoryRouter, Route, Routes } from 'react-router'
-import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router'
+import { afterEach, expect, it } from 'vitest'
 import Dashboard from './index'
-import { dashboardDemo } from './demo'
-import { downloadDashboardReport } from './report'
-
-vi.mock('./report', async (original) => ({ ...await original<typeof import('./report')>(), downloadDashboardReport: vi.fn() }))
-
-const originalShowModal = Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, 'showModal')
-const originalClose = Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, 'close')
-beforeEach(() => {
-  vi.resetAllMocks()
-  Object.defineProperty(HTMLDialogElement.prototype, 'showModal', { configurable: true, value: function (this: HTMLDialogElement) { this.setAttribute('open', '') } })
-  Object.defineProperty(HTMLDialogElement.prototype, 'close', { configurable: true, value: function (this: HTMLDialogElement) { this.removeAttribute('open') } })
-})
-afterEach(() => {
-  cleanup()
-  if (originalShowModal) Object.defineProperty(HTMLDialogElement.prototype, 'showModal', originalShowModal)
-  else Reflect.deleteProperty(HTMLDialogElement.prototype, 'showModal')
-  if (originalClose) Object.defineProperty(HTMLDialogElement.prototype, 'close', originalClose)
-  else Reflect.deleteProperty(HTMLDialogElement.prototype, 'close')
-})
-
-function setup() {
-  render(<MemoryRouter initialEntries={['/dashboard']}><Routes>
-    <Route path="/dashboard" element={<Dashboard />} />
-    <Route path="/reposicoes" element={<h1>Destino reposições</h1>} />
-    <Route path="/mapa" element={<h1>Destino mapa</h1>} />
-    <Route path="/produtos" element={<h1>Destino produtos</h1>} />
-  </Routes></MemoryRouter>)
+import Insights from '../Insights'
+import TestSession from '../../test/TestSession'
+import { installShelfApiMock } from '../../test/shelfApiMock'
+import { mockDialogs } from '../../test/dialog'
+import { analyticsRecords } from '../../test/analyticsApiFixture'
+import { vi } from 'vitest'
+mockDialogs()
+afterEach(() => { cleanup(); vi.unstubAllGlobals() })
+function setup(insights = false, status = 200) {
+  const api = installShelfApiMock()
+  api.fetch.mockImplementation((input, options) => String(input).endsWith('/restockings/list') ? Promise.resolve(Response.json(status === 200 ? analyticsRecords() : {}, { status })) : api.respond(input, options))
+  render(<TestSession><MemoryRouter>{insights ? <Insights /> : <Dashboard />}</MemoryRouter></TestSession>)
 }
-
-it('exibe a origem demonstrativa, o resumo e o total coerente das tarefas', () => {
-  setup()
-  expect(screen.getByRole('heading', { name: 'Dashboard', level: 1 })).toBeTruthy()
-  expect(screen.getByText(/^Dados demonstrativos ·/)).toBeTruthy()
-  expect(screen.getByText(/428 vendas/)).toBeTruthy()
-  const tasks = screen.getByRole('region', { name: 'Reposição em movimento' })
-  expect(within(tasks).getByText('56 tarefas hoje')).toBeTruthy()
-  expect(within(tasks).getByRole('img').getAttribute('aria-label')).toContain('36 concluídas')
+it('shows actual catalog totals and exposes daily quantities as a table', async () => {
+  setup(); await screen.findByText('3 produtos')
+  expect(screen.getByText('34 unidades registradas nas gôndolas')).toBeTruthy()
+  fireEvent.click(screen.getByRole('button', { name: 'Ver valores por dia' }))
+  expect(screen.getByRole('table', { name: 'Unidades registradas sem avarias' })).toBeTruthy()
+  expect(screen.queryByText('R$ 48.760')).toBeNull()
 })
-
-it('fornece alternativa em tabela para todos os pontos do gráfico', () => {
-  setup()
-  expect(screen.getByRole('img', { name: /Receita demonstrativa dos últimos sete dias/ })).toBeTruthy()
-  const trigger = screen.getByRole('button', { name: 'Ver valores por dia' })
-  trigger.focus()
-  fireEvent.click(trigger)
-  const dialog = screen.getByRole('dialog', { name: 'Receita por dia' })
-  const table = screen.getByRole('table', { name: 'Receita diária demonstrativa' })
-  expect(within(table).getAllByRole('row')).toHaveLength(8)
-  expect(within(table).getByRole('rowheader', { name: /25\/09\/2026/ })).toBeTruthy()
-  fireEvent.keyDown(dialog, { key: 'Escape' })
-  expect(screen.queryByRole('dialog')).toBeNull()
-  expect(document.activeElement).toBe(trigger)
+it('keeps the catalog visible when the replenishment source is unavailable', async () => {
+  setup(false, 503); await screen.findByText('3 produtos')
+  await screen.findByText('Reposições indisponíveis.')
+  expect(screen.queryByRole('button', { name: 'Ver valores por dia' })).toBeNull()
 })
-
-it('aciona o download local e informa sucesso ou falha sem consultar a API', () => {
-  setup()
-  const button = screen.getByRole('button', { name: 'Exportar relatório' })
-  fireEvent.click(button)
-  expect(downloadDashboardReport).toHaveBeenCalledWith(dashboardDemo)
-  expect(screen.getByRole('status').textContent).toContain('Download do relatório demonstrativo iniciado')
-  vi.mocked(downloadDashboardReport).mockImplementationOnce(() => { throw new Error('Unavailable download') })
-  fireEvent.click(button)
-  expect(screen.getByRole('alert').textContent).toContain('Não foi possível preparar')
-})
-
-it('abre as sugestões, restaura foco ao fechar e navega para a central', () => {
-  setup()
-  const trigger = screen.getByRole('button', { name: 'Explorar oportunidades' })
-  trigger.focus()
-  fireEvent.click(trigger)
-  const dialog = screen.getByRole('dialog', { name: 'Prepare a loja para o próximo pico' })
-  expect(within(dialog).getByText(/Sugestões ilustrativas/)).toBeTruthy()
-  fireEvent.keyDown(dialog, { key: 'Escape' })
-  expect(screen.queryByRole('dialog')).toBeNull()
-  expect(document.activeElement).toBe(trigger)
-  fireEvent.click(trigger)
-  fireEvent.click(screen.getByRole('link', { name: 'Ver central de reposição' }))
-  expect(screen.getByRole('heading', { name: 'Destino reposições' })).toBeTruthy()
-  expect(document.body.style.overflow).toBe('')
-})
-
-it.each([
-  ['Gôndola A12', 'Destino mapa'],
-  ['Definir responsáveis', 'Destino reposições'],
-  ['Leite integral 1 L', 'Destino produtos'],
-])('direciona a prioridade %s ao módulo correto', (name, destination) => {
-  setup()
-  fireEvent.click(screen.getByRole('link', { name: new RegExp(name) }))
-  expect(screen.getByRole('heading', { name: destination })).toBeTruthy()
+it('Insights derives categories and does not invent sales growth', async () => {
+  setup(true); await screen.findByRole('progressbar', { name: 'Bebidas: 2 produtos' })
+  expect(screen.queryByText('Uma semana em crescimento.')).toBeNull()
+  expect(screen.getByText(/Receita, tempo médio/)).toBeTruthy()
 })

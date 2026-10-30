@@ -4,11 +4,13 @@ Atualizado em 27/10/2026, incluindo a correção da consulta do mapa por empresa
 
 ## Etapa atual — Integração real e entrega
 
+Rodada final preparada em PRs independentes #55 a #62, além da PR de alertas/documentação. A [matriz de entrega](integration-delivery.md) registra o estado desta rodada e os contratos efetivamente usados. A sequência abaixo preserva o planejamento original, sem afirmar que essas PRs já foram mergeadas.
+
 Referência atual: API main `27c15b6`, que já inclui JWT. Mapa e gôndolas requerem também a correção `fix/map-list-query-performance`, com consulta do catálogo por empresa em `/api/v1/store-map`. A referência anterior `28c73d8` usava as mesmas regras de login, mas combinava listagens globais, inadequadas para o volume real.
 
 1. **Autenticação e identidade entregues pelas PRs #51 e #52:** JWT por cookies, cliente HTTP compartilhado, CSRF, tratamento de expiração e perfil com dados disponíveis da sessão. Renovação automática pertence ao backend. Nome e empresa reais dependem da ampliação do contrato de identidade (ver `visual-profile.md`).
 2. **Gôndolas e mapa — frontend #53 mergeado:** consulta do catálogo por empresa, IDs reais, mapa esquemático e CRUD persistente. A API requer a PR #37, ainda aberta na verificação desta etapa. Ver `shelf-management.md` e `store-map.md` para limites e confirmação de gravações.
-3. **PR atual — Consulta de Produtos e saldos nas gôndolas:** catálogo por empresa, categorias, preços, marcas, busca, filtros, paginação e vínculos reais com o mapa. Saldo parcial/zero e ausência de vínculo são diferenciados. Próximas PRs: operações de catálogo após corrigir a atribuição de empresa no backend; quantidade no depósito depende de contrato que exponha esse dado. Ver `product-catalog.md`.
+3. **Produtos — consulta entregue na #54; PR atual de operações:** cadastro, edição e exclusão com confirmação, validações, categorias reais e recarga do catálogo. Requer também a correção de empresa na API (`fix/product-company-mutations`), em PR dedicada. Quantidade no depósito, movimentação e vinculação ainda dependem de entregas próprias. Ver `product-catalog.md`.
 4. Reposição e funcionários: PRs dedicadas para tarefas, responsáveis, equipe e operações disponíveis.
 5. Vendas, Dashboard e Insights: mapear dados existentes, períodos e cálculos; registrar os indicadores sem fonte disponível. PRs por módulo.
 6. Perfil, configurações e IA: conectar somente capacidades reais da API. Recursos sem endpoint permanecem explicitamente pendentes.

@@ -11,3 +11,5 @@ export type CatalogProduct = {
   placements: ProductPlacement[]
 }
 export type ProductCatalog = { updatedAt: string; categories: ProductCategory[]; products: CatalogProduct[] }
+export type ProductInput = { name: string; brand: string; categoryId: string; price: string }
+export type ProductFieldErrors = Partial<Record<keyof ProductInput, string>>
