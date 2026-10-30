@@ -8,15 +8,19 @@ import Modal from '../../components/Modal'
 import TextField from '../../components/TextField'
 import VisualPage from '../../components/VisualPage'
 import { useSessionIdentity } from '../../hooks/useSessionIdentity'
+import { useAuth } from '../../hooks/useAuth'
 import './styles.css'
 
 export default function Profile() {
   const { email, initials, user, status } = useSessionIdentity()
+  const { refreshSession } = useAuth()
+  const [refreshing, setRefreshing] = useState(false)
   const [passwordOpen, setPasswordOpen] = useState(false)
   const authorized = status === 'authenticated' && user?.roles.includes('MANAGER') === true
 
   return <VisualPage title="Meu perfil" description="Identificação e permissões da conta em uso." className="profile"
-    footer={<><span>Identificação da conta</span><span>Somente consulta</span></>}>
+    footer={<><span>Identificação da conta</span><span>Somente consulta</span></>}
+    actions={<Button loading={refreshing} onClick={() => { setRefreshing(true); void refreshSession().finally(() => setRefreshing(false)) }}>Atualizar identificação</Button>}>
     {!authorized ? <Feedback kind="error" title="Identificação indisponível." description="Entre com uma conta de gerente para consultar seu perfil." /> : <>
       <p className="visual-note">Seu perfil está disponível para consulta. Alterações de cadastro ainda não estão disponíveis neste painel.</p>
       <div className="profile__layout">

@@ -1,7 +1,7 @@
 import { Link } from 'react-router'
 import { ArrowRight, Lightbulb } from 'lucide-react'
 import type { AnswerSource, AssistantMessage } from '../../types/assistantView'
-import { publicSources } from '../../services/chatbotService'
+import { publicSources } from '../../services/assistantSources'
 
 const labels: Record<AnswerSource, string> = { pdf: 'Documento PDF', database: 'Banco de dados', memory: 'Memória' }
 

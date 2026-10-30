@@ -1,53 +1,26 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { Download } from 'lucide-react'
-import Badge from '../../components/Badge'
 import Button from '../../components/Button'
 import Card from '../../components/Card'
 import Feedback from '../../components/Feedback'
 import VisualPage from '../../components/VisualPage'
-import useDemoData from '../../hooks/useDemoData'
-import { downloadInsights, getInsightsView } from '../../services/insightsViewService'
+import useApiData from '../../hooks/useApiData'
+import { exportOperations, getOperationalAnalytics } from '../../services/operationalAnalyticsService'
 import './styles.css'
-
-const money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })
-const decimal = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 })
-const moves = [
-  { title: 'Antecipe bebidas', description: 'Maior procura entre 17h e 20h.', path: '/produtos' },
-  { title: 'Revise o mínimo de leite', description: 'Saída acima do estoque de segurança.', path: '/produtos' },
-  { title: 'Reforce a equipe', description: 'Mais tempo de reposição após as 18h.', path: '/funcionarios' },
-]
-
 export default function Insights() {
-  const { data, loading, error, retry } = useDemoData(getInsightsView)
-  const [message, setMessage] = useState('')
-  const [exportError, setExportError] = useState(false)
-  function exportAnalysis() {
-    if (!data) return
-    try { downloadInsights(data); setExportError(false); setMessage('Download da análise demonstrativa iniciado.') }
-    catch { setExportError(true); setMessage('Não foi possível preparar a análise. Tente novamente.') }
-  }
-  const stockouts = [...(data?.categories ?? [])].sort((first, second) => ['Bebidas', 'Mercearia', 'Limpeza', 'Higiene'].indexOf(first.name) - ['Bebidas', 'Mercearia', 'Limpeza', 'Higiene'].indexOf(second.name))
-
-  return <VisualPage title="Insights" description="Transforme os dados da operação em próximas ações." className="insights"
-    actions={<Button icon={<Download />} disabled={!data} onClick={exportAnalysis}>Exportar análise</Button>}>
-    {message && <p role={exportError ? 'alert' : 'status'} className="visual-message">{message}</p>}
-    {error ? <Feedback kind="error" title="Não foi possível carregar a análise." onRetry={retry} /> : loading || !data ? <Feedback kind="loading" title="Carregando análise…" /> : <div className="insights__grid">
-      <Card tone="brand" className="insights__summary"><p>Últimos 7 dias</p><h2>Uma semana<br />em crescimento.</h2><strong>{money.format(data.revenue)}</strong><div><Badge tone="warning">+ {decimal.format(data.growth)}%</Badge><span>vs. semana anterior</span></div></Card>
-      <Card title="O que move suas vendas" description="Participação na receita por categoria" className="insights__categories">
-        <div className="insights__shares" role="img" aria-label={`Participação na receita: ${data.categories.map((category) => `${category.name} ${category.share}%`).join(', ')}`}>
-          {data.categories.map((category) => <div key={category.name}><span>{category.name}</span><span className="insights__track"><span className={category.name === 'Bebidas' ? 'insights__bar--warm' : ''} style={{ width: `${category.share / 40 * 100}%` }} /></span><strong>{category.share}%</strong></div>)}
-        </div>
-      </Card>
-      <Card title="Próximos movimentos" description="Oportunidades para sua loja" className="insights__moves"><ol>{moves.map((move, index) => <li key={move.title}><Link to={move.path}><span>{String(index + 1).padStart(2, '0')}</span><div><strong>{move.title}</strong><p>{move.description}</p></div></Link></li>)}</ol></Card>
-      <Card className="insights__metrics" aria-label="Indicadores operacionais"><dl>
-        <div><dt>Taxa de ruptura</dt><dd>{decimal.format(data.stockoutRate)}%</dd></div><div><dt>Tempo de reposição</dt><dd>{data.restockingMinutes} min</dd></div><div><dt>Reposições concluídas</dt><dd>{data.completionRate}%</dd></div>
-      </dl></Card>
-      <Card title="Onde estão as rupturas" description={`${stockouts.reduce((total, category) => total + category.stockouts, 0)} produtos indisponíveis nas gôndolas · dia demonstrativo`} className="insights__stockouts">
-        <div className="insights__chart" role="img" aria-label={`Produtos em ruptura por categoria: ${stockouts.map((category) => `${category.name} ${category.stockouts}`).join(', ')}`}>
-          {stockouts.map((category) => <div key={category.name}><div className="insights__column"><strong>{category.stockouts}</strong><span className={category.name === 'Bebidas' ? 'insights__bar--warm' : ''} style={{ height: `${category.stockouts * 34}px` }} /></div><span>{category.name}</span></div>)}
-        </div>
-      </Card>
+  const { data, error, reload } = useApiData(getOperationalAnalytics)
+  const [message, setMessage] = useState(''); const [exportFailed, setExportFailed] = useState(false)
+  function download() { if (!data) return; try { exportOperations(data); setExportFailed(false); setMessage('Download da análise iniciado.') } catch { setExportFailed(true); setMessage('Não foi possível exportar a análise.') } }
+  return <VisualPage title="Insights" description="Analise o catálogo e os registros disponíveis da operação." className="insights" footer="Indicadores calculados a partir da API"
+    actions={<Button icon={<Download />} disabled={!data} onClick={download}>Exportar análise</Button>}>
+    {message && <p role={exportFailed ? 'alert' : 'status'}>{message}</p>}
+    {error ? <Feedback kind="error" title="Não foi possível carregar a análise." description={error.message} onRetry={() => void reload()} /> : !data ? <Feedback kind="loading" title="Carregando análise…" /> : <div className="insights__grid">
+      <Card tone="brand" className="insights__summary"><p>Últimos sete dias</p><h2>Reposições registradas</h2><strong>{data.week?.length ?? '—'}</strong><p>{data.days[0].date} a {data.today}</p>{data.restockingError && <p>Registros de reposição indisponíveis.</p>}</Card>
+      <Card title="Distribuição do catálogo" className="insights__categories"><p>Quantidade de produtos por categoria.</p>{data.categories.map(c => <div key={c.id}><span>{c.name}</span><progress aria-label={`${c.name}: ${c.count} produtos`} value={c.count} max={data.catalog.products.length || 1} /><strong>{c.count}</strong></div>)}{!data.categories.length && <p>Catálogo sem produtos.</p>}</Card>
+      <Card title="Próximas ações" className="insights__moves"><ul><li><Link to="/mapa"><strong>Revisar gôndolas</strong><p>{data.zero.length} vínculos sem saldo.</p></Link></li><li><Link to="/produtos"><strong>Consultar produtos</strong><p>{data.catalog.products.length} produtos no catálogo.</p></Link></li><li><Link to="/reposicoes"><strong>Consultar reposições</strong><p>Conferir quantidades e avarias registradas.</p></Link></li></ul></Card>
+      <Card className="insights__metrics"><dl><div><dt>Unidades nas gôndolas</dt><dd>{data.quantity}</dd></div><div><dt>Vínculos com saldo</dt><dd>{data.availableLinks}</dd></div><div><dt>Avarias nos últimos sete dias</dt><dd>{data.week?.reduce((sum, r) => sum + r.damagedQuantity, 0) ?? '—'}</dd></div></dl></Card>
+      <Card title="Vínculos sem saldo por categoria" className="insights__stockouts"><ul>{data.categories.map(c => <li key={c.id}>{c.name}: <strong>{c.zeroLinks}</strong></li>)}</ul><p>Receita, tempo médio de reposição e previsão de demanda não estão disponíveis nesta consulta.</p></Card>
     </div>}
   </VisualPage>
 }

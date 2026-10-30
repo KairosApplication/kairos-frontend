@@ -1,45 +1,84 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
-import { MemoryRouter } from 'react-router'
-import { afterEach, expect, it, vi } from 'vitest'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import TestSession from '../../test/TestSession'
+import { chatId, handleChat, makeChatFixture } from '../../test/assistantApiFixture'
 import KairosAssistant from './index'
-import * as service from '../../services/assistantViewService'
-afterEach(() => { cleanup(); vi.restoreAllMocks() })
-
-it('seleciona e pesquisa conversas preservando mensagens separadas', async () => {
-  render(<MemoryRouter><KairosAssistant /></MemoryRouter>)
-  const conversation = await screen.findByRole('button', { name: /Vendas da semana/ })
-  fireEvent.click(conversation)
-  expect(within(screen.getByRole('log')).getByText(/receita da semana foi de R\$ 313.760/)).toBeTruthy()
-  expect(within(screen.getByRole('log')).queryByText(/Comece pela gôndola A12/)).toBeNull()
-  fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'inexistente' } })
-  expect(screen.getByText('Nenhuma conversa encontrada.')).toBeTruthy()
+let db: ReturnType<typeof makeChatFixture>
+let fetch: ReturnType<typeof vi.fn<typeof globalThis.fetch>>
+beforeEach(() => {
+  db = makeChatFixture()
+  fetch = vi.fn<typeof globalThis.fetch>(async (input, options) => {
+    const path = new URL(String(input)).pathname
+    if (path.endsWith('/auth/me')) return Response.json({ email: 'gerente@kairos.example', roles: ['MANAGER'] })
+    if (path.endsWith('/auth/login')) return Response.json({ headerName: 'X-CSRF-TOKEN', token: 'fixture-csrf' })
+    const result = handleChat(db, options?.method ?? 'GET', path, options?.body ? JSON.parse(String(options.body)) : undefined)
+    return Response.json(result?.json ?? {}, { status: result?.status ?? 404 })
+  })
+  vi.stubGlobal('fetch', fetch)
+})
+afterEach(() => { cleanup(); vi.unstubAllGlobals() })
+async function setup() { render(<TestSession><KairosAssistant /></TestSession>); await screen.findByRole('log') }
+it('sends only question and conversation ID with cookies and CSRF, then reloads persisted history', async () => {
+  await setup()
+  fireEvent.change(screen.getByRole('textbox', { name: 'Mensagem para KAIROS IA' }), { target: { value: 'Como está a operação?' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Enviar mensagem' }))
+  await screen.findByText('Resposta recebida do serviço de IA.')
+  const call = fetch.mock.calls.find(([url, options]) => String(url).endsWith('/me/chat/messages') && options?.method === 'POST')
+  expect(JSON.parse(String(call?.[1]?.body))).toEqual({ question: 'Como está a operação?', conversationId: chatId })
+  expect(new Headers(call?.[1]?.headers).get('X-CSRF-TOKEN')).toBe('fixture-csrf')
+  expect(new Headers(call?.[1]?.headers).has('Authorization')).toBe(false)
+  expect(call?.[1]?.credentials).toBe('include')
+})
+it('creates a persistent conversation without assigning a client user ID', async () => {
+  await setup(); fireEvent.click(screen.getByRole('button', { name: 'Nova conversa' }))
+  await screen.findByText('Como podemos cuidar da loja hoje?')
+  expect(db.conversations).toHaveLength(2)
+})
+it('does not retry an uncertain message and recovers history with GET', async () => {
+  const respond = fetch.getMockImplementation()!
+  fetch.mockImplementation(async (input, options) => { const response = await respond(input, options); if (String(input).endsWith('/me/chat/messages')) throw new TypeError('lost response'); return response })
+  await setup()
+  fireEvent.change(screen.getByRole('textbox', { name: 'Mensagem para KAIROS IA' }), { target: { value: 'Minha pergunta' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Enviar mensagem' }))
+  await screen.findByText('Não foi possível carregar a conversa.')
+  fireEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }))
+  await screen.findByText('Minha pergunta', { selector: 'p' })
+  expect(fetch.mock.calls.filter(([url, options]) => String(url).endsWith('/me/chat/messages') && options?.method === 'POST')).toHaveLength(1)
+})
+it('keeps the draft after a known rejection and renders model text as plain text', async () => {
+  await setup()
+  const respond = fetch.getMockImplementation()!
+  fetch.mockImplementation((input, options) => String(input).endsWith('/me/chat/messages') ? Promise.resolve(Response.json({}, { status: 403 })) : respond(input, options))
+  fireEvent.change(screen.getByRole('textbox', { name: 'Mensagem para KAIROS IA' }), { target: { value: '<script>alert(1)</script>' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Enviar mensagem' }))
+  await screen.findByRole('alert')
+  await waitFor(() => expect((screen.getByRole('textbox', { name: 'Mensagem para KAIROS IA' }) as HTMLInputElement).value).toBe('<script>alert(1)</script>'))
+  expect(document.querySelector('script')).toBeNull()
 })
 
-it('cria conversa e responde localmente sem consultar um modelo de IA', async () => {
-  render(<MemoryRouter><KairosAssistant /></MemoryRouter>)
-  await screen.findByRole('log')
-  fireEvent.click(screen.getByRole('button', { name: 'Nova conversa' }))
-  expect(screen.getByText('Como podemos cuidar da loja hoje?')).toBeTruthy()
-  fireEvent.change(screen.getByRole('textbox', { name: 'Mensagem para KAIROS IA' }), { target: { value: 'Quero ver as vendas' } })
+it('keeps sources attached to their own persisted reply when switching conversations', async () => {
+  const second = '000000000000000000000002'
+  db.conversations.push({ id: second, status: 'ACTIVE', messages: [{ sender: 'AI', content: 'Preferência salva', sources: ['memory', 'private.collection'] }] })
+  await setup()
+  expect(screen.getByText('Documento PDF')).toBeTruthy()
+  fireEvent.change(screen.getByRole('textbox', { name: 'Mensagem para KAIROS IA' }), { target: { value: 'Consulte o estoque' } })
   fireEvent.click(screen.getByRole('button', { name: 'Enviar mensagem' }))
-  expect(await within(screen.getByRole('log')).findByText(/Mercearia representa 38%/)).toBeTruthy()
-  expect(within(screen.getByRole('log')).queryByLabelText('Fontes consultadas')).toBeNull()
-  expect(screen.getByText(/Demonstração com respostas predefinidas/)).toBeTruthy()
-  expect(screen.getByRole('textbox', { name: 'Mensagem para KAIROS IA' }).getAttribute('value')).toBe('')
+  const answer = await screen.findByText('Resposta recebida do serviço de IA.')
+  const bubble = within(answer.closest('article')!)
+  expect(bubble.getByText('Banco de dados')).toBeTruthy()
+  expect(bubble.queryByText('Documento PDF')).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: /Conversa 000002/ }))
+  await screen.findByText('Preferência salva')
+  expect(screen.getByText('Memória')).toBeTruthy()
+  expect(screen.queryByText('Banco de dados')).toBeNull()
+  expect(screen.queryByText('Documento PDF')).toBeNull()
+  expect(screen.queryByText(/private.collection/)).toBeNull()
 })
 
-it('preserva o texto quando a resposta demonstrativa falha e permite nova tentativa', async () => {
-  vi.spyOn(service, 'getDemonstrativeReply').mockRejectedValueOnce(new Error('Unavailable demo'))
-  render(<MemoryRouter><KairosAssistant /></MemoryRouter>)
-  await screen.findByRole('log')
-  fireEvent.click(screen.getByRole('button', { name: 'Nova conversa' }))
-  const input = screen.getByRole('textbox', { name: 'Mensagem para KAIROS IA' })
-  fireEvent.change(input, { target: { value: 'Como está o estoque?' } })
-  fireEvent.click(screen.getByRole('button', { name: 'Enviar mensagem' }))
-  expect(await screen.findByRole('alert')).toBeTruthy()
-  expect(input.getAttribute('value')).toBe('Como está o estoque?')
-  expect(within(screen.getByRole('log')).queryByText('Como está o estoque?')).toBeNull()
-  fireEvent.click(screen.getByRole('button', { name: 'Enviar mensagem' }))
-  expect(await within(screen.getByRole('log')).findByText('Comece pela gôndola A12, no setor de Bebidas.')).toBeTruthy()
+it('omits the source section for old replies without recorded sources', async () => {
+  db.conversations[0].messages[0].sources = []
+  await setup()
+  expect(screen.queryByLabelText('Fontes consultadas')).toBeNull()
+  expect(screen.queryByText(/Dados demonstrativos|Demo/)).toBeNull()
 })
