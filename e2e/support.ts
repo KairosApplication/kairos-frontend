@@ -37,7 +37,7 @@ export async function mockSession(page: Page, authenticated = true) {
     }
     if (path === '/api/v1/auth/logout') { signedIn = false; await route.fulfill({ status: 204, headers }); return }
     if (!signedIn) { await route.fulfill({ status: 401, headers }); return }
-    if (path === '/api/v1/alerts/list' && request.method() === 'GET') { await route.fulfill({ headers, json: [{ id: 1, shelfId: 101, productId: 1, description: 'Produto sem saldo na gÃ´ndola 101', status: 'OPEN', stockoutDate: '2026-10-27' }] }); return }
+    if (path === '/api/v1/alerts/list' && request.method() === 'GET') { await route.fulfill({ headers, json: [{ id: 1, shelfId: 101, productId: 1, description: 'Produto sem saldo na gôndola 101', status: 'OPEN', stockoutDate: '2026-10-27' }] }); return }
     const body = request.postData() ? request.postDataJSON() : undefined
     const data = handleEmployees(db, request.method(), path.replace('/api/v1', ''), body) ?? handleRestocking(restocking, request.method(), path.replace('/api/v1', ''), body) ?? handleSales(request.method(), path.replace('/api/v1', '')) ?? handleChat(chat, request.method(), path, body) ?? handleShelfFixture(db, request.method(), path.replace('/api/v1', ''), body)
     if (data) {
