@@ -41,13 +41,33 @@ O catálogo de Mapa, Gôndolas e Produtos requer `/api/v1/store-map`, da PR #37 
 
 A hospedagem deve servir `index.html` nas rotas da aplicação, incluindo `/dashboard`, `/mapa` e `/produtos`. As APIs precisam de HTTPS, origens autorizadas e políticas de cookie compatíveis com a topologia de implantação. A publicação não é realizada pelas PRs desta rodada.
 
+<!-- docs-bot:start -->
 ## Documentação
 
-- [Login e autenticação](docs/login-api.md)
-- [Mapa da Loja](docs/store-map.md)
-- [Gestão de Gôndolas](docs/shelf-management.md)
-- [Catálogo de Produtos](docs/product-catalog.md)
-- [Planejamento](docs/roadmap.md)
+- [Auditoria de acessibilidade — WCAG 2.1 A e AA](docs/accessibility-audit.md)
+- [Acessibilidade: contraste e reflow](docs/accessibility-contrast.md)
+- [Acessibilidade: formulários e mensagens](docs/accessibility-forms.md)
+- [Acessibilidade: navegação e foco](docs/accessibility-navigation.md)
+- [Perfil e Configurações — sessão e preferências reais](docs/account-settings-session.md)
+- [KAIROS IA — cliente do chat pessoal](docs/assistant-chat-api.md)
+- [Dashboard visual](docs/dashboard.md)
+- [Funcionários — integração real](docs/employees-api.md)
+- [Entrega da integração — frontend](docs/integration-delivery.md)
+- [Login do gerente](docs/login-api.md)
+- [Dashboard e Insights — indicadores operacionais reais](docs/operational-analytics.md)
+- [Catálogo de Produtos — consulta e operações reais](docs/product-catalog.md)
+- [Central de Reposição — registros reais](docs/restocking-api.md)
+- [Planejamento KAIROS Web — gerente](docs/roadmap.md)
+- [Vendas e Clientes — contratos disponíveis](docs/sales-customers-api.md)
 - [Componentes compartilhados](docs/shared-ui.md)
-- [Avaliação de acessibilidade e roteiro manual](docs/accessibility-audit.md)
-- [Matriz da integração final](docs/integration-delivery.md)
+- [Gestão de Gôndolas — integração com a API](docs/shelf-management.md)
+- [Produtos nas gôndolas](docs/shelf-product-assignments.md)
+- [Mapa da Loja — dados reais](docs/store-map.md)
+- [Funcionários — cobertura visual](docs/visual-employees.md)
+- [Insights — cobertura visual](docs/visual-insights.md)
+- [KAIROS IA — cobertura visual](docs/visual-kairos-ai.md)
+- [Meu Perfil — identidade autenticada](docs/visual-profile.md)
+- [Central de Reposição — cobertura visual](docs/visual-restocking.md)
+- [Vendas & Clientes — cobertura visual](docs/visual-sales-customers.md)
+- [Configurações — cobertura visual](docs/visual-settings.md)
+<!-- docs-bot:end -->
