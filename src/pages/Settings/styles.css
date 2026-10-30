@@ -23,7 +23,7 @@
 .settings__theme button { min-width: 100px; min-height: 36px; padding: 6px 12px; border: 0; border-radius: 30px; background: var(--color-background); color: var(--color-primary-strong); font-size: 10px; cursor: pointer; }
 .settings__theme button[aria-pressed='true'] { background: #e5f5eb; }
 .settings__theme-note { margin: 8px 0 0; font-size: 10px; color: var(--color-text-muted); }
-.settings__notifications > div { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 8px 0 22px; }
+.settings__notifications > div { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: 8px 0 22px; }
 .settings__notifications > div + div { border-top: 1px solid var(--color-border); padding-top: 24px; }
 .settings__notifications h3 { margin: 0 0 10px; font-size: 14px; font-weight: 500; }
 .settings__notifications p { margin: 0; color: var(--color-text-muted); font-size: 12px; line-height: 1.6; }
@@ -31,7 +31,7 @@
 .settings__security > svg { color: var(--color-primary); flex-shrink: 0; }
 .settings__security > div { flex: 1; min-width: 0; }
 .settings__security h2 { margin: 0 0 12px; font-size: 15px; font-weight: 600; }
-.settings__security p { margin: 0; color: var(--color-text-muted); font-size: 11px; line-height: 1.6; }
+.settings__security p { margin: 0; color: var(--color-text-muted); font-size: 11px; line-height: 1.6; overflow-wrap: anywhere; }
 .settings__security .ui-button { min-width: 244px; justify-content: flex-start; font-size: 13px; }
 .settings__sessions { display: grid; gap: 20px; padding: 0; margin: 0; list-style: none; }
 .settings__sessions li { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; padding-bottom: 20px; border-bottom: 1px solid var(--color-border); font-size: 13px; }
