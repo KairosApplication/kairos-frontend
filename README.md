@@ -61,6 +61,7 @@ A hospedagem deve servir `index.html` nas rotas da aplicação, incluindo `/dash
 - [Central de Reposição — registros reais](docs/restocking-api.md)
 - [Planejamento KAIROS Web — gerente](docs/roadmap.md)
 - [Vendas e Clientes — contratos disponíveis](docs/sales-customers-api.md)
+- [Consultas compartilhadas e carregamento progressivo](docs/shared-api-reads.md)
 - [Componentes compartilhados](docs/shared-ui.md)
 - [Gestão de Gôndolas — integração com a API](docs/shelf-management.md)
 - [Produtos nas gôndolas](docs/shelf-product-assignments.md)
