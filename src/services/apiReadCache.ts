@@ -1,5 +1,5 @@
 // Short-lived business data stays in this tab and is isolated by authenticated identity.
-const paths = new Set(['/store-map', '/employees/list', '/customers/list', '/restockings/list', '/inventories/list', '/categories/list'])
+const paths = new Set(['/store-map', '/employees/list', '/customers/list', '/restockings/list', '/restockings/options', '/inventories/list', '/categories/list'])
 const ttl = 30000
 let scope: string | null = null
 let revision = 0
