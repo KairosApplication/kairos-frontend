@@ -31,7 +31,7 @@ it('keeps the catalog visible when the replenishment source is unavailable', asy
 it('Insights derives categories and does not invent sales growth', async () => {
   setup(true); await screen.findByRole('progressbar', { name: 'Bebidas: 2 produtos' })
   expect(screen.queryByText('Uma semana em crescimento.')).toBeNull()
-  expect(screen.getByText(/Receita, tempo médio/)).toBeTruthy()
+  expect(screen.getByRole('heading', { name: 'Onde estão as rupturas' })).toBeTruthy()
 })
 
 it('renders the catalog while the heavy history request is still pending', async () => {
