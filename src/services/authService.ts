@@ -1,5 +1,5 @@
 import type { LoginCredentials, SessionUser, TokenResponse } from '../types/auth'
-import { apiRequest, getCsrfToken, isRecord, readApiJson } from './apiClient'
+import { apiRequest, getCsrfToken, isApiConfigured, isRecord, readApiJson } from './apiClient'
 import { setApiReadScope } from './apiReadCache'
 
 export class AccessDeniedError extends Error {
@@ -28,6 +28,7 @@ async function sessionUser(response: Response): Promise<SessionUser> {
 }
 
 export async function getSession(signal?: AbortSignal): Promise<SessionUser | null> {
+  if (!isApiConfigured) { setApiReadScope(null); return null }
   // The backend renews an expired/missing access cookie using its HttpOnly refresh cookie.
   const response = await apiRequest('/auth/me', { signal })
   if (response.status === 401) { setApiReadScope(null); return null }

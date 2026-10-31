@@ -1,7 +1,10 @@
 import type { CsrfResponse } from '../types/auth'
 import { clearApiReads } from './apiReadCache'
 
-const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/+$/, '')
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL?.trim()
+  || (import.meta.env.MODE === 'pages' ? '' : 'http://localhost:8080')).replace(/\/+$/, '')
+
+export const isApiConfigured = Boolean(apiBaseUrl)
 type ApiRequestOptions = Omit<RequestInit, 'credentials' | 'cache' | 'redirect'>
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
@@ -17,6 +20,7 @@ export async function readApiJson(response: Response): Promise<unknown> {
 }
 
 async function send(path: `/${string}`, options: ApiRequestOptions = {}): Promise<Response> {
+  if (!isApiConfigured) throw new Error('O acesso ainda não está disponível. Aguarde a liberação do serviço da loja.')
   options.signal?.throwIfAborted()
   const configured = Number(import.meta.env.VITE_API_READ_TIMEOUT_MS || 60000)
   const readTimeout = Number.isInteger(configured) && configured >= 15000 && configured <= 300000 ? configured : 60000
