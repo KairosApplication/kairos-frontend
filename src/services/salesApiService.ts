@@ -1,10 +1,10 @@
-import { apiRequest, isRecord, readApiJson } from './apiClient'
-import { ApiHttpError, invalidApiData, parseApiList } from './apiData'
+import { isRecord } from './apiClient'
+import { invalidApiData, parseApiList, readApiData } from './apiData'
 export type ApiCustomer = { id: number; userId: number; userName: string }
 export type Recommendation = { productId: number; productName: string; categoryId: number; categoryName: string }
 const id = (v: unknown): v is number => typeof v === 'number' && Number.isSafeInteger(v) && v > 0
 const text = (v: unknown): v is string => typeof v === 'string' && !!v.trim()
-async function get(path: `/${string}`, signal?: AbortSignal) { const response = await apiRequest(path, { signal }); if (response.status !== 200) throw new ApiHttpError(response.status); return readApiJson(response) }
+const get = readApiData
 export async function getCustomers(signal?: AbortSignal) {
   return parseApiList(await get('/customers/list', signal), (v): v is ApiCustomer => isRecord(v) && id(v.id) && id(v.userId) && text(v.userName)).sort((a, b) => a.userName.localeCompare(b.userName, 'pt-BR') || a.id - b.id)
 }

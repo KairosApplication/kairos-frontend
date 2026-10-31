@@ -1,5 +1,5 @@
-import { apiRequest, isRecord, readApiJson } from './apiClient'
-import { ApiHttpError, invalidApiData, parseApiList } from './apiData'
+import { isRecord } from './apiClient'
+import { invalidApiData, parseApiList, readApiData } from './apiData'
 import type { AisleDto, ProductShelfDto, SectorDto, ShelfDto } from '../types/shelfApi'
 import type { ProductDto, StoreCatalogDto } from '../types/storeCatalogApi'
 
@@ -15,9 +15,7 @@ const productDto = (v: unknown): v is ProductDto => isRecord(v) && positive(v.id
 const linkDto = (v: unknown): v is ProductShelfDto => isRecord(v) && positive(v.id) && positive(v.productId) && positive(v.shelfId) && quantity(v.productQuantity)
 
 export async function getStoreCatalog(signal?: AbortSignal): Promise<StoreCatalogDto> {
-  const response = await apiRequest('/store-map', { signal })
-  if (response.status !== 200) throw new ApiHttpError(response.status)
-  const payload = await readApiJson(response)
+  const payload = await readApiData('/store-map', signal)
   if (!isRecord(payload)) invalidApiData()
   const sectors = parseApiList(payload.sectors, sectorDto)
   const aisles = parseApiList(payload.aisles, aisleDto)

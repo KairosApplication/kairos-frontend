@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApiHttpError } from '../services/apiData'
 import { useAuth } from './useAuth'
+import { clearApiReads } from '../services/apiReadCache'
 
 export default function useApiData<T>(loader: (signal?: AbortSignal) => Promise<T>) {
   const { refreshSession } = useAuth()
@@ -20,6 +21,7 @@ export default function useApiData<T>(loader: (signal?: AbortSignal) => Promise<
     })
     .catch((cause: unknown) => { if (!controller.signal.aborted) fail(cause) }), [loader, fail])
   const reload = useCallback(async () => {
+    clearApiReads()
     request.current?.abort()
     const controller = new AbortController()
     request.current = controller

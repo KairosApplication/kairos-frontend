@@ -1,4 +1,5 @@
 import type { CsrfResponse } from '../types/auth'
+import { clearApiReads } from './apiReadCache'
 
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/+$/, '')
 type ApiRequestOptions = Omit<RequestInit, 'credentials' | 'cache' | 'redirect'>
@@ -17,6 +18,14 @@ export async function readApiJson(response: Response): Promise<unknown> {
 
 async function send(path: `/${string}`, options: ApiRequestOptions = {}): Promise<Response> {
   options.signal?.throwIfAborted()
+  const configured = Number(import.meta.env.VITE_API_READ_TIMEOUT_MS || 60000)
+  const readTimeout = Number.isInteger(configured) && configured >= 15000 && configured <= 300000 ? configured : 60000
+  const method = (options.method ?? 'GET').toUpperCase()
+  const extendedRead = ['GET', 'HEAD'].includes(method)
+    && (!path.startsWith('/auth/') || path === '/auth/me' || path === '/auth/login')
+  const login = path === '/auth/login' && method === 'POST'
+  const timeoutMs = extendedRead || login ? readTimeout : 15000
+  const timeout = AbortSignal.timeout(timeoutMs)
   try {
     return await fetch(`${apiBaseUrl}/api/v1${path}`, {
       ...options,
@@ -24,11 +33,14 @@ async function send(path: `/${string}`, options: ApiRequestOptions = {}): Promis
       cache: 'no-store',
       redirect: 'error',
       signal: options.signal
-        ? AbortSignal.any([options.signal, AbortSignal.timeout(15000)])
-        : AbortSignal.timeout(15000),
+        ? AbortSignal.any([options.signal, timeout])
+        : timeout,
     })
   } catch (error: unknown) {
     if (options.signal?.aborted) throw error
+    if (timeout.aborted || error instanceof Error && error.name === 'TimeoutError') {
+      throw new Error(`A API da loja demorou mais de ${Math.ceil(timeoutMs / 1000)} segundos para responder. Aguarde antes de tentar novamente.`, { cause: error })
+    }
     throw new Error('Não foi possível conectar à loja. Verifique sua conexão e tente novamente.', { cause: error })
   }
 }
@@ -49,8 +61,10 @@ export async function apiRequest(path: `/${string}`, options: ApiRequestOptions 
   const method = (options.method ?? 'GET').toUpperCase()
   const headers = new Headers(options.headers)
   if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+    clearApiReads()
     const csrf = await getCsrfToken(options.signal)
     headers.set(csrf.headerName, csrf.token)
   }
-  return send(path, { ...options, method, headers })
+  if (['GET', 'HEAD', 'OPTIONS'].includes(method)) return send(path, { ...options, method, headers })
+  try { return await send(path, { ...options, method, headers }) } finally { clearApiReads() }
 }

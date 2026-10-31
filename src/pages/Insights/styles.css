@@ -1,15 +1,26 @@
 .insights__grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2.27fr); grid-template-areas: 'summary categories' 'moves metrics' 'moves stockouts'; gap: 24px; }
 .insights__summary { grid-area: summary; display: flex; flex-direction: column; min-height: 304px; }
-.insights__summary > p { margin: 0 0 28px; text-transform: uppercase; font-size: 10px; }
+.insights__summary > p { margin: 0 0 24px; text-transform: uppercase; font-size: 10px; }
 .insights__summary h2 { margin: 0 0 28px; font-size: 28px; line-height: 1.4; font-weight: 600; }
 .insights__summary > strong { font-size: 34px; font-weight: 600; }
 .insights__summary > div { display: flex; align-items: center; gap: 16px; margin-top: auto; padding-top: 24px; }
 .insights__summary .ui-badge { min-width: 100px; font-size: 10px; }
-.insights__summary > div > span:last-child { color: #d1e7da; font-size: 10px; }
+.insights__period { display: inline-block; border-radius: 20px; background: #fff3cf; color: #805300; padding: 7px 12px; font-size: 10px; }
+.insights__summary > p.insights__summary-note { text-transform: none; line-height: 1.6; margin: 12px 0 0; }
 .insights__categories { grid-area: categories; }
 .insights__shares { display: grid; gap: 28px; padding-top: 12px; }
 .insights__shares > div { display: grid; grid-template-columns: 120px minmax(0, 1fr) 50px; align-items: center; gap: 20px; font-size: 12px; }
 .insights__shares strong { text-align: right; font-weight: 600; }
+.insights__shares > div > span { overflow-wrap: anywhere; }
+.insights__shares progress { appearance: none; display: block; width: 100%; min-width: 0; height: 12px; border: 0; border-radius: 8px; overflow: hidden; background: var(--color-background); color: var(--color-primary-strong); }
+.insights__shares progress::-webkit-progress-bar { background: var(--color-background); border-radius: 8px; }
+.insights__shares progress::-webkit-progress-value { background: var(--color-primary-strong); border-radius: 8px; }
+.insights__shares progress::-moz-progress-bar { background: var(--color-primary-strong); border-radius: 8px; }
+.insights__shares progress.insights__bar--warm::-webkit-progress-value { background: var(--color-accent); }
+.insights__shares progress.insights__bar--warm::-moz-progress-bar { background: var(--color-accent); }
+.insights__note { color: var(--color-text-muted); font-size: 12px; line-height: 1.7; margin-bottom: 0; }
+.insights__moves a > div { min-width: 0; }
+.insights__summary > p[role='status'] { text-transform: none; line-height: 1.7; margin: 16px 0 0; }
 .insights__track { height: 12px; background: var(--color-background); border-radius: 8px; }
 .insights__track > span { display: block; height: 100%; border-radius: inherit; background: #00845f; }
 .insights__moves { grid-area: moves; }
@@ -33,7 +44,7 @@
 .insights__column { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 126px; gap: 10px; }
 .insights__column strong { font-size: 18px; font-weight: 600; }
 .insights__column > span { width: min(76px, 100%); background: #00845f; border-radius: 8px 8px 5px 5px; }
-.insights__chart > div > span { display: block; margin-top: 18px; color: var(--color-text-muted); font-size: 11px; }
-.insights__chart .insights__bar--warm, .insights__shares .insights__bar--warm { background: var(--color-accent); }
+.insights__chart > div > span { display: block; margin-top: 18px; color: var(--color-text-muted); font-size: 11px; overflow-wrap: anywhere; }
+.insights__chart .insights__bar--warm { background: var(--color-accent); }
 @media (max-width: 1150px) { .insights__grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'summary' 'categories' 'metrics' 'stockouts' 'moves'; } .insights__summary { min-height: 280px; } }
 @media (max-width: 600px) { .insights__shares > div { grid-template-columns: 76px minmax(0, 1fr) 32px; gap: 10px; font-size: 10px; } .insights__metrics dl { grid-template-columns: minmax(0, 1fr); gap: 20px; } .insights__metrics dl > div { padding: 0; } .insights__metrics dl > div + div { border-left: 0; border-top: 1px solid var(--color-border); padding-top: 20px; } .insights__chart { gap: 12px; } .insights__chart > div > span { font-size: 9px; } }

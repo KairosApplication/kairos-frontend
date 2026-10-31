@@ -31,6 +31,8 @@ No Windows, é possível usar o Chrome instalado com `$env:PLAYWRIGHT_CHROME_CHA
 
 ## Integrações e revisão
 
+Consulte [consultas compartilhadas e carregamento progressivo](docs/shared-api-reads.md) para a política de reutilização de dados e os limites das melhorias de desempenho no frontend.
+
 A rodada final foi dividida em PRs independentes da main. Consulte [a matriz de entrega](docs/integration-delivery.md) para links, contratos disponíveis, verificações e limites. As PRs precisam ser aprovadas e mergeadas para as integrações aparecerem na main.
 
 O catálogo de Mapa, Gôndolas e Produtos requer `/api/v1/store-map`, da PR #37 da API. As operações de produtos usam as rotas por empresa da PR #38 da API. As demais integrações usam somente os endpoints existentes. O cliente de IA usa as rotas pessoais do serviço Python; a compatibilidade de autenticação entre Python e Spring precisa ser validada pelos serviços.
