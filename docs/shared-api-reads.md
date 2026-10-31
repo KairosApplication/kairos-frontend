@@ -13,7 +13,7 @@ Esta melhoria altera apenas o frontend. Reduz requisições repetidas e evita qu
 
 ## Telas
 
-Dashboard e Insights mostram o catálogo assim que ele chega; os indicadores de reposição têm carregamento e erro separados. Uma consulta pendente não é apresentada como zero registros.
+O Dashboard usa o catálogo para rupturas e prioridades e não consulta o histórico de reposições para preencher vendas ou estados de tarefas. Insights mostra o catálogo assim que ele chega; os indicadores de reposição têm carregamento e erro separados. Uma consulta pendente não é apresentada como zero registros.
 
 Central de Reposição consulta inicialmente apenas catálogo e registros. A lista e o filtro identificam os responsáveis pelos IDs disponíveis. Equipe e depósitos são carregados ao abrir o formulário de criação/edição; falhas nessas opções ficam no formulário. Exclusão não exige essas consultas auxiliares.
 

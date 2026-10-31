@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, expect, it } from 'vitest'
 import Dashboard from './index'
@@ -13,19 +13,22 @@ mockDialogs()
 afterEach(() => { cleanup(); vi.unstubAllGlobals() })
 function setup(insights = false, status = 200) {
   const api = installShelfApiMock()
-  api.fetch.mockImplementation((input, options) => String(input).endsWith('/restockings/list') ? Promise.resolve(Response.json(status === 200 ? analyticsRecords() : {}, { status })) : api.respond(input, options))
+  api.fetch.mockImplementation((input, options) => String(input).endsWith('/store-map') && status !== 200 ? Promise.resolve(Response.json({}, { status })) : String(input).endsWith('/restockings/list') ? Promise.resolve(Response.json(analyticsRecords())) : api.respond(input, options))
   render(<TestSession><MemoryRouter>{insights ? <Insights /> : <Dashboard />}</MemoryRouter></TestSession>)
+  return api
 }
-it('shows actual catalog totals and exposes daily quantities as a table', async () => {
-  setup(); await screen.findByText('3 produtos')
-  expect(screen.getByText('34 unidades registradas nas gôndolas')).toBeTruthy()
-  fireEvent.click(await screen.findByRole('button', { name: 'Ver valores por dia' }))
-  expect(screen.getByRole('table', { name: 'Unidades registradas sem avarias' })).toBeTruthy()
+it('preserves sales and task indicators without substituting catalog or replenishment metrics', async () => {
+  setup(); await screen.findByRole('heading', { name: 'Pulso da loja · hoje' })
+  expect(screen.getByRole('heading', { name: 'Ritmo das vendas' })).toBeTruthy()
+  expect(screen.getByText('Histórico de vendas indisponível.')).toBeTruthy()
+  expect(screen.getByText('produtos em ruptura').previousSibling?.textContent).toBe('1')
+  expect(screen.queryByText('3 produtos')).toBeNull()
+  expect(screen.queryByText('34 unidades registradas nas gôndolas')).toBeNull()
   expect(screen.queryByText('R$ 48.760')).toBeNull()
 })
-it('keeps the catalog visible when the replenishment source is unavailable', async () => {
-  setup(false, 503); await screen.findByText('3 produtos')
-  await screen.findByText('Reposições indisponíveis.')
+it('offers retry when actual store indicators cannot be loaded', async () => {
+  setup(false, 503); await screen.findByText('Não foi possível carregar o Dashboard.')
+  expect(screen.getByRole('button', { name: 'Tentar novamente' })).toBeTruthy()
   expect(screen.queryByRole('button', { name: 'Ver valores por dia' })).toBeNull()
 })
 it('Insights derives categories and does not invent sales growth', async () => {
@@ -34,15 +37,10 @@ it('Insights derives categories and does not invent sales growth', async () => {
   expect(screen.getByRole('heading', { name: 'Onde estão as rupturas' })).toBeTruthy()
 })
 
-it('renders the catalog while the heavy history request is still pending', async () => {
-  const api = installShelfApiMock()
-  let finish!: (response: Response) => void
-  api.fetch.mockImplementation((input, options) => String(input).endsWith('/restockings/list') ? new Promise(resolve => { finish = resolve }) : api.respond(input, options))
-  render(<TestSession><MemoryRouter><Dashboard /></MemoryRouter></TestSession>)
-  await screen.findByText('3 produtos')
-  expect(screen.getByText('Carregando indicadores de reposição…')).toBeTruthy()
+it('does not request replenishment history to populate sales or task statuses', async () => {
+  const api = setup()
+  await screen.findByRole('heading', { name: 'Pulso da loja · hoje' })
+  expect(api.fetch.mock.calls.some(([url]) => String(url).endsWith('/restockings/list'))).toBe(false)
   expect(screen.queryByRole('button', { name: 'Ver valores por dia' })).toBeNull()
-  finish(Response.json({}, { status: 503 }))
-  await screen.findByText('Reposições indisponíveis.')
-  expect(screen.getByText('3 produtos')).toBeTruthy()
+  expect(screen.getByLabelText('Concluídas: quantidade não informada')).toBeTruthy()
 })

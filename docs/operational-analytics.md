@@ -1,10 +1,10 @@
 # Dashboard e Insights — indicadores operacionais reais
 
-As páginas compartilham `getOperationalAnalytics`: catálogo por empresa em `/api/v1/store-map` e registros em `/api/v1/restockings/list`. Não há cache de uma conta para outra nem fallback demonstrativo.
+O Dashboard consulta o catálogo por empresa em `/api/v1/store-map` para rupturas e prioridades. Mantém os cards de receita, ritmo das vendas e estados das tarefas previstos no design, com valores indisponíveis enquanto essas fontes não estiverem integradas. Não usa contagens de catálogo ou reposições para preencher indicadores de vendas. Insights usa também os registros em `/api/v1/restockings/list`. Não há cache de uma conta para outra nem fallback demonstrativo.
 
-O catálogo fornece produtos, categorias, gôndolas, unidades vinculadas, vínculos com saldo positivo/zerado e gôndolas sem produtos. Insights mostra contagens por categoria, não participação na receita. Vínculos zerados não são contados como produtos únicos; ausência de vínculo não é uma ruptura presumida.
+O catálogo fornece produtos, categorias, gôndolas, unidades vinculadas e vínculos com saldo positivo/zerado. O Dashboard conta produtos distintos com saldo zero em alguma gôndola e agrupa as prioridades por gôndola. Insights mostra participação no catálogo, não participação na receita; quando há mais de quatro categorias, as três primeiras e o grupo agregado das restantes preservam os totais. Ausência de vínculo não é uma ruptura presumida.
 
-O período de reposição abrange hoje e os seis dias anteriores, usando a data da operação em America/Sao_Paulo. O gráfico soma quantidade reposta menos avarias por data registrada; não é gráfico de vendas nem movimentação de estoque. A tabela acessível e o CSV trazem os mesmos valores. Registros futuros e fora do intervalo são excluídos.
+O período de reposição de Insights abrange hoje e os seis dias anteriores, usando a data da operação em America/Sao_Paulo. Registros futuros e fora do intervalo são excluídos. O Dashboard não consulta esse histórico para preencher o gráfico de vendas ou inferir estados de tarefas.
 
 Se a leitura de reposições falhar, os indicadores do catálogo permanecem visíveis e o período de reposição aparece indisponível. Um retorno vazio válido produz zero; falha de consulta não é convertida em zero. Falhas de autenticação solicitam revalidação da sessão.
 
