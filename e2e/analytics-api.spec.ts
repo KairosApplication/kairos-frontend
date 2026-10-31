@@ -1,15 +1,15 @@
 import { expect, test } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { mockSession, preferredTheme } from './support'
-test('Dashboard and Insights share actual operational totals and export a report', async ({ page }) => {
+test('Dashboard preserves intended indicators and exports unavailable values explicitly', async ({ page }, testInfo) => {
   await mockSession(page); await page.goto('/dashboard')
-  await expect(page.getByRole('heading', { name: '3 produtos' })).toBeVisible()
-  await expect(page.getByText('34 unidades registradas nas gôndolas')).toBeVisible()
-  await page.getByRole('button', { name: 'Ver valores por dia' }).click()
-  await expect(page.getByRole('table', { name: 'Unidades registradas sem avarias' })).toBeVisible()
-  await page.keyboard.press('Escape')
+  await expect(page.getByRole('heading', { name: 'Pulso da loja · hoje' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Ritmo das vendas' })).toBeVisible()
+  await expect(page.getByText('Histórico de vendas indisponível.')).toBeVisible()
+  await expect(page.locator('.dashboard__grid > section')).toHaveCount(6)
+  await page.screenshot({ path: testInfo.outputPath('dashboard-reference.png'), fullPage: true })
   const download = page.waitForEvent('download'); await page.getByRole('button', { name: 'Exportar relatório' }).click()
-  expect((await download).suggestedFilename()).toBe('kairos-operacao.csv')
+  expect((await download).suggestedFilename()).toBe('kairos-dashboard.csv')
   await page.goto('/insights')
   await expect(page.getByRole('progressbar', { name: 'Bebidas: 2 produtos' })).toBeVisible()
 })

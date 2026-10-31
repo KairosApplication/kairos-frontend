@@ -24,7 +24,7 @@ for (const theme of ['light', 'dark'] as const) {
     test.setTimeout(180000)
     await mockSession(page); await preferredTheme(page, theme)
     const cases = [
-      ['/dashboard', 'Ver valores por dia'], ['/mapa', 'Ver detalhes'], ['/gondolas', 'Nova gôndola'],
+      ['/mapa', 'Ver detalhes'], ['/gondolas', 'Nova gôndola'],
       ['/produtos', 'Ver detalhes de Coca-Cola 2 L'], ['/reposicoes', 'Criar reposição'],
       ['/funcionarios', 'Novo funcionário'], ['/vendas-clientes', 'Ver recomendações'],
       ['/perfil', 'Alterar senha'], ['/configuracoes', 'Gerenciar acessos'],
