@@ -5,6 +5,7 @@ export function makeRestockingFixture() { return {
   records: [{ id: 1, inventoryId: 1, employeeId: 1, shelfId: 101, productId: 1, restockingDate: '2026-10-27T10:00:00', restockedQuantity: 12, damagedQuantity: 0 }, { id: 2, inventoryId: 1, employeeId: 2, shelfId: 102, productId: 2, restockingDate: '2026-10-26T11:00:00', restockedQuantity: 20, damagedQuantity: 2 }] as RestockingRecord[],
 } }
 export function handleRestocking(db: ReturnType<typeof makeRestockingFixture>, method: string, path: string, body?: unknown): { status: number; json?: unknown } | null {
+  if (method === 'GET' && path === '/restockings/options') return { status: 200, json: { people: db.people, inventories: db.inventories } }
   const lists: Record<string, unknown> = { '/employees/list': db.people, '/inventories/list': db.inventories, '/restockings/list': db.records }
   if (method === 'GET' && path in lists) return { status: 200, json: lists[path] }
   if (!path.startsWith('/restockings/') || !['POST', 'PATCH', 'DELETE'].includes(method)) return null

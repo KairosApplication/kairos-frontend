@@ -1,5 +1,5 @@
 import { apiRequest, isRecord } from './apiClient'
-import { ApiHttpError, parseApiList, readApiData } from './apiData'
+import { ApiHttpError, invalidApiData, parseApiList, readApiData } from './apiData'
 import { getStoreCatalog } from './storeCatalogService'
 import type { StoreCatalogDto } from '../types/storeCatalogApi'
 export type RestockingRecord = { id: number; inventoryId: number; employeeId: number; shelfId: number; productId: number; restockingDate: string; restockedQuantity: number; damagedQuantity: number }
@@ -18,10 +18,10 @@ export async function getRestockingCatalog(signal?: AbortSignal) {
   return { catalog, records: records.sort((a, b) => b.restockingDate.localeCompare(a.restockingDate) || b.id - a.id) }
 }
 export async function getRestockingOptions(catalog: StoreCatalogDto, signal?: AbortSignal) {
-  const [people, inventories] = await Promise.all([
-    list<Person>('/employees/list', (v): v is Person => isRecord(v) && id(v.id) && typeof v.userName === 'string' && !!v.userName.trim() && typeof v.position === 'string' && ['MANAGER', 'STOCKER', 'CASHIER'].includes(v.position.toUpperCase()), signal),
-    list<Inventory>('/inventories/list', (v): v is Inventory => isRecord(v) && id(v.id) && id(v.sectorId) && typeof v.sectorName === 'string' && !!v.sectorName.trim(), signal),
-  ])
+  const payload = await readApiData('/restockings/options', signal)
+  if (!isRecord(payload)) invalidApiData()
+  const people = parseApiList(payload.people, (v): v is Person => isRecord(v) && id(v.id) && typeof v.userName === 'string' && !!v.userName.trim() && typeof v.position === 'string' && ['MANAGER', 'STOCKER'].includes(v.position.toUpperCase()))
+  const inventories = parseApiList(payload.inventories, (v): v is Inventory => isRecord(v) && id(v.id) && id(v.sectorId) && typeof v.sectorName === 'string' && !!v.sectorName.trim())
   return { people: people.filter(p => ['STOCKER', 'MANAGER'].includes(p.position.toUpperCase())), inventories: inventories.filter(i => catalog.sectors.some(s => s.id === i.sectorId)) }
 }
 export class RestockingUncertainError extends Error { constructor() { super('Não foi possível confirmar a alteração. Consulte as reposições antes de tentar novamente.') } }
