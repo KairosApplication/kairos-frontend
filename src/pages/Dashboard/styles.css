@@ -192,6 +192,12 @@
   margin-bottom: 10px;
 }
 
+.dashboard-sales { min-height: 300px; }
+.dashboard-sales__unavailable { min-height: 204px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: var(--color-text-muted); font-size: 13px; text-align: center; }
+.dashboard-sales__unavailable p { margin: 0; }
+.dashboard-restocking__bar--unknown { background: var(--color-border); border-radius: var(--radius-pill); }
+.dashboard-opportunity .dashboard__text-link { justify-content: space-between; text-decoration: none; }
+
 .dashboard-chart__table {
   width: 100%;
   border-collapse: collapse;
