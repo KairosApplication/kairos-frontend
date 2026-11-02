@@ -3,17 +3,17 @@ import { ApiHttpError } from '../services/apiData'
 import { useAuth } from './useAuth'
 import { clearApiReads } from '../services/apiReadCache'
 
-export default function useApiData<T>(loader: (signal?: AbortSignal) => Promise<T>) {
+export default function useApiData<T>(loader: (signal?: AbortSignal) => Promise<T>, { keepData = false } = {}) {
   const { refreshSession } = useAuth()
   const [data, setData] = useState<T | null>(null)
   const [error, setError] = useState<Error | null>(null)
   const request = useRef<AbortController | null>(null)
   const fail = useCallback((cause: unknown) => {
     request.current?.abort()
-    setData(null)
+    if (!keepData || cause instanceof ApiHttpError && [401, 403, 404].includes(cause.status)) setData(null)
     setError(cause instanceof Error ? cause : new Error('Não foi possível consultar os dados.'))
     if (cause instanceof ApiHttpError && cause.status === 401) void refreshSession()
-  }, [refreshSession])
+  }, [refreshSession, keepData])
   const load = useCallback((controller: AbortController) => Promise.resolve()
     .then(() => loader(controller.signal))
     .then(next => {
@@ -25,9 +25,10 @@ export default function useApiData<T>(loader: (signal?: AbortSignal) => Promise<
     request.current?.abort()
     const controller = new AbortController()
     request.current = controller
-    setData(null); setError(null)
+    if (!keepData) setData(null)
+    setError(null)
     return load(controller)
-  }, [load])
+  }, [load, keepData])
   useEffect(() => {
     const controller = new AbortController()
     request.current = controller

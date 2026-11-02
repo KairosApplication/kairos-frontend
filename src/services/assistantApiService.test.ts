@@ -51,12 +51,12 @@ it.each([{ approved: false }, { blocked: true }])('omits sources for an unapprov
   payload = reply({ ...flags, sources: ['database'] })
   expect((await sendChatMessage(id, 'Pergunta')).sources).toEqual([])
 })
-it.each([401, 403, 500])('does not replay a failed write or expose its remote body: %s', async code => {
+it.each([400, 401, 403, 409, 422, 429, 500, 503])('does not replay a failed write or expose its remote body: %s', async code => {
   status = code; payload = { message: 'password=secret; collection=private' }
   const failed = sendChatMessage(id, 'Pergunta')
   await expect(failed).rejects.not.toThrow(/password|collection|secret/)
   expect(fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/chat/messages'))).toHaveLength(1)
-  if (code === 500) await expect(failed).rejects.toBeInstanceOf(ChatUncertainError)
+  if (code >= 500 || code === 409) await expect(failed).rejects.toBeInstanceOf(ChatUncertainError)
 })
 it('accepts the configured chatbot alias while preserving the same secure client', async () => {
   vi.stubEnv('VITE_CHATBOT_API_URL', 'https://chat.kairos.test/')

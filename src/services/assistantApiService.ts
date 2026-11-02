@@ -7,7 +7,31 @@ export type ChatMessage = { sender: string; content: string; timestamp?: string 
 export type ChatHistory = { id: string; status: string; summary?: string | null; messages: ChatMessage[] }
 const objectId = (v: unknown): v is string => typeof v === 'string' && /^[a-f\d]{24}$/i.test(v)
 const text = (v: unknown): v is string => typeof v === 'string' && !!v.trim()
-export class ChatUncertainError extends Error { constructor() { super('Não foi possível confirmar a operação. Atualize a conversa antes de tentar novamente.') } }
+export class ChatUncertainError extends Error {
+  public status?: number
+  constructor(status?: number) {
+    super((status && status >= 500 ? 'O serviço de IA está temporariamente indisponível.'
+      : status === 409 ? 'A conversa está ocupada ou foi alterada.' : 'Não foi possível confirmar a operação.')
+      + ' Sua solicitação pode ter sido processada. Atualize o histórico antes de tentar novamente.')
+    this.status = status
+  }
+}
+export function chatErrorMessage(cause: unknown): string {
+  if (cause instanceof ChatUncertainError) return cause.message
+  if (cause instanceof ApiHttpError) {
+    const messages: Record<number, string> = {
+      400: 'Não foi possível aceitar a mensagem. Revise o texto e tente novamente.',
+      401: 'Sua sessão expirou. Entre novamente para continuar suas conversas.',
+      403: 'Seu perfil não permite essa solicitação. Revise sua pergunta ou escolha outra conversa.',
+      404: 'Esta conversa não está disponível para o seu perfil. Atualize a lista de conversas.',
+      409: 'A conversa está ocupada ou foi alterada. Atualize o histórico.',
+      422: 'A mensagem contém dados inválidos. Revise o texto e tente novamente.',
+      429: 'Há muitas solicitações no momento. Aguarde um pouco antes de tentar novamente.',
+    }
+    return messages[cause.status] ?? 'O serviço de IA está temporariamente indisponível. Tente novamente mais tarde.'
+  }
+  return 'Não foi possível acessar o chat. Verifique sua conexão e tente novamente.'
+}
 function origin() {
   const url = new URL(import.meta.env.VITE_CHATBOT_API_URL?.trim() || import.meta.env.VITE_AI_BASE_URL?.trim() || 'http://localhost:8000')
   if (url.username || url.password || url.search || url.hash || url.pathname !== '/' || url.protocol !== 'https:' && !(url.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname))) throw new Error('Configure uma origem válida para o serviço de IA.')
@@ -22,7 +46,7 @@ async function request(path: string, method: 'GET' | 'POST', body?: unknown, sig
   try { response = await fetch(`${base}/api/v1/me/chat${path}`, { method, credentials: 'include', cache: 'no-store', redirect: 'error', signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(method === 'POST' ? 120000 : 15000)]) : AbortSignal.timeout(method === 'POST' ? 120000 : 15000), headers: { [csrf.headerName]: csrf.token, ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) }) }
   catch (cause) { if (signal?.aborted) throw cause; if (method === 'POST') throw new ChatUncertainError(); throw new Error('Não foi possível conectar ao serviço de IA.', { cause }) }
   const expected = method === 'GET' ? 200 : path === '/conversations' ? 201 : 200
-  if (response.status >= 500 && method === 'POST' || response.ok && response.status !== expected) throw new ChatUncertainError()
+  if (method === 'POST' && (response.status >= 500 || response.status === 409) || response.ok && response.status !== expected) throw new ChatUncertainError(response.status)
   if (response.status !== expected) throw new ApiHttpError(response.status)
   try { return await readApiJson(response) } catch (cause) { if (method === 'POST') throw new ChatUncertainError(); throw cause }
 }
