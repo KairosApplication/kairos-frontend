@@ -33,3 +33,12 @@ it('aborts outdated reads and ignores a late response after retry or unmount', a
   unmount()
   expect(pending[1].signal.aborted).toBe(true)
 })
+
+it.each([401, 403, 404])('clears protected data after HTTP %s even when retention is enabled', async status => {
+  const loader = vi.fn().mockResolvedValueOnce('histórico autorizado').mockRejectedValue(new ApiHttpError(status))
+  const { result } = renderHook(() => useApiData(loader, { keepData: true }), { wrapper: TestSession })
+  await waitFor(() => expect(result.current.data).toBe('histórico autorizado'))
+  await act(async () => { await result.current.reload() })
+  expect(result.current.data).toBeNull()
+  expect(result.current.error).toBeInstanceOf(ApiHttpError)
+})

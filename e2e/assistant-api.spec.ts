@@ -16,6 +16,30 @@ test('personal chat creates a conversation and loads the persisted response', as
   await page.getByRole('navigation', { name: 'Conversas', exact: true }).getByRole('button', { name: /Conversa 000002/ }).click()
   await expect(page.getByRole('log').getByText('Banco de dados', { exact: true })).toBeVisible()
 })
+
+test('keeps history and draft visible after a server error without repeating the message', async ({ page }) => {
+  await mockSession(page)
+  let posts = 0
+  await page.route('**/api/v1/me/chat/messages', async route => {
+    if (route.request().method() !== 'POST') { await route.fallback(); return }
+    posts++
+    await route.fulfill({ status: 503, headers: {
+      'Access-Control-Allow-Origin': 'http://127.0.0.1:4175',
+      'Access-Control-Allow-Credentials': 'true',
+    }, json: { detail: 'private.database; password=secret' } })
+  })
+  await page.goto('/kairos-ia')
+  await expect(page.getByRole('log')).toContainText('Como posso ajudar na operação?')
+  await page.getByRole('textbox', { name: 'Mensagem para KAIROS IA' }).fill('Qual é a prioridade de reposição?')
+  await page.getByRole('button', { name: 'Enviar mensagem' }).click()
+  await expect(page.getByRole('alert')).toContainText('temporariamente indisponível')
+  await expect(page.getByRole('log')).toContainText('Como posso ajudar na operação?')
+  await expect(page.getByRole('textbox', { name: 'Mensagem para KAIROS IA' })).toHaveValue('Qual é a prioridade de reposição?')
+  await expect(page.getByRole('button', { name: 'Enviar mensagem' })).toBeDisabled()
+  await expect(page.getByRole('button', { name: 'Atualizar histórico' })).toBeEnabled()
+  await expect(page.getByText(/private.database|password=secret/)).toHaveCount(0)
+  expect(posts).toBe(1)
+})
 test('@a11y personal chat messages and controls work in both themes', async ({ page }) => {
   await mockSession(page); await page.setViewportSize({ width: 320, height: 844 })
   for (const theme of ['light', 'dark'] as const) {
