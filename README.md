@@ -39,6 +39,10 @@ O catálogo de Mapa, Gôndolas e Produtos requer `/api/v1/store-map`, da PR #37 
 
 ## Build e publicação
 
+Para publicar no Render com frontend e APIs na mesma origem, use `npm run build:server`
+e `npm run start:server`. O [guia do Render](docs/render.md) descreve o servidor
+Node, os upstreams e a configuração pelo `render.yaml`.
+
 `npm run build` gera `dist`. As variáveis `VITE_*` são incorporadas durante esse build; alterar somente o ambiente do servidor depois não atualiza o bundle. Para conferir o resultado, execute `npm run preview`.
 
 A hospedagem deve servir `index.html` nas rotas da aplicação, incluindo `/dashboard`, `/mapa` e `/produtos`. As APIs precisam de HTTPS, origens autorizadas e políticas de cookie compatíveis com a topologia de implantação. A publicação não é realizada pelas PRs desta rodada.

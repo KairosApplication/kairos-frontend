@@ -22,6 +22,14 @@ beforeEach(() => {
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs() })
 const reply = (extra = {}) => ({ answer: 'Resposta', conversationId: id, executionId: '000000000000000000000099', approved: true, blocked: false, ...extra })
 
+it('uses the frontend origin for personal chat in the server build', async () => {
+  vi.stubEnv('MODE', 'server')
+  vi.stubGlobal('window', { location: { origin: 'https://frontend.kairos.test' } })
+  payload = { id, status: 'ACTIVE', messages: [] }
+  await getConversation(id)
+  expect(fetchMock.mock.calls.some(([url]) => String(url) === `https://frontend.kairos.test/api/v1/me/chat/conversations/${id}`)).toBe(true)
+})
+
 it('deduplicates public categories and rejects unknown or internal sources', () => {
   expect(publicSources(['database', 'private.users', 'memory', { collection: 'internal' }, 'database'])).toEqual(['database', 'memory'])
   expect(publicSources(undefined)).toEqual([])

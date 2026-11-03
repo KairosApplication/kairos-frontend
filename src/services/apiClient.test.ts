@@ -13,6 +13,16 @@ beforeEach(async () => {
 })
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.unstubAllEnvs() })
 
+it('uses the frontend origin in the server build instead of a public build-time API URL', async () => {
+  vi.stubEnv('MODE', 'server')
+  vi.resetModules()
+  const client = await import('./apiClient')
+  fetchMock.mockResolvedValueOnce(new Response())
+  await client.apiRequest('/auth/me')
+  expect(client.isApiConfigured).toBe(true)
+  expect(fetchMock).toHaveBeenCalledExactlyOnceWith('/api/v1/auth/me', expect.objectContaining({ credentials: 'include' }))
+})
+
 it.each(['GET', 'HEAD', 'OPTIONS'])('lê com %s, cookies e timeout sem requisitar CSRF', async (method) => {
   fetchMock.mockResolvedValueOnce(new Response())
   await apiRequest('/products/list', { method })

@@ -33,6 +33,7 @@ export function chatErrorMessage(cause: unknown): string {
   return 'Não foi possível acessar o chat. Verifique sua conexão e tente novamente.'
 }
 function origin() {
+  if (import.meta.env.MODE === 'server') return window.location.origin
   const url = new URL(import.meta.env.VITE_CHATBOT_API_URL?.trim() || import.meta.env.VITE_AI_BASE_URL?.trim() || 'http://localhost:8000')
   if (url.username || url.password || url.search || url.hash || url.pathname !== '/' || url.protocol !== 'https:' && !(url.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname))) throw new Error('Configure uma origem válida para o serviço de IA.')
   return url.origin
