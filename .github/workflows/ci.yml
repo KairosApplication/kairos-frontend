@@ -33,5 +33,9 @@ jobs:
         run: npm run lint
       - name: Test authentication service
         run: npm run test
+      - name: Test same-origin proxy
+        run: npm run test:server
       - name: Check TypeScript and production build
         run: npm run build
+      - name: Check Render production build
+        run: npm run build:server

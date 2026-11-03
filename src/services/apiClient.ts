@@ -1,10 +1,11 @@
 import type { CsrfResponse } from '../types/auth'
 import { clearApiReads } from './apiReadCache'
 
-const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL?.trim()
+const sameOriginApi = import.meta.env.MODE === 'server'
+const apiBaseUrl = sameOriginApi ? '' : (import.meta.env.VITE_API_BASE_URL?.trim()
   || (import.meta.env.MODE === 'pages' ? '' : 'http://localhost:8080')).replace(/\/+$/, '')
 
-export const isApiConfigured = Boolean(apiBaseUrl)
+export const isApiConfigured = sameOriginApi || Boolean(apiBaseUrl)
 type ApiRequestOptions = Omit<RequestInit, 'credentials' | 'cache' | 'redirect'>
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
