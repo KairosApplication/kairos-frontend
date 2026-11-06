@@ -29,6 +29,58 @@ test('products use the company catalog, reload prices and open the chosen real s
   expect(resourceRequests.every(value => value === 'GET /api/v1/store-map')).toBe(true)
 })
 
+test('fills the catalog beside twenty categories and paginates every category without new API reads', async ({ page }) => {
+  const db = await mockSession(page)
+  db.categories = Array.from({ length: 20 }, (_, index) => ({ id: index + 1, category: `Categoria ${String(index + 1).padStart(2, '0')}` }))
+  db.products = Array.from({ length: 800 }, (_, index) => ({ id: index + 1,
+    name: `Produto de teste com nome longo ${String(index + 1).padStart(6, '0')}`, brand: 'Marca de teste',
+    price: 10, category: db.categories[index % 20] }))
+  db.links = []
+  let catalogReads = 0
+  page.on('request', request => { if (new URL(request.url()).pathname === '/api/v1/store-map') catalogReads++ })
+  await page.goto('/produtos')
+  const rows = page.locator('.products__catalog tbody tr')
+  const pagination = page.getByRole('navigation', { name: 'Paginação dos produtos' })
+  async function expectFilled() {
+    await expect.poll(async () => page.locator('.products__layout').evaluate(layout => {
+      const sidebar = layout.querySelector('.products__categories')!.getBoundingClientRect()
+      const catalog = layout.querySelector('.products__catalog')!.getBoundingClientRect()
+      return catalog.bottom - sidebar.bottom
+    })).toBeGreaterThanOrEqual(-1)
+    expect(await rows.count()).toBeGreaterThan(5)
+    expect(await rows.count()).toBeLessThan(40)
+  }
+  await expectFilled()
+  await page.screenshot({ path: 'test-results/products-filled-desktop.png', fullPage: true })
+  for (const category of db.categories) {
+    await page.getByRole('button', { name: `${category.category} 40 produtos`, exact: true }).click()
+    await expectFilled()
+    const count = await rows.count()
+    const firstName = await rows.first().innerText()
+    await expect(page.getByRole('status')).toHaveText(`Exibindo 1–${count} de 40 produtos`)
+    await pagination.getByRole('button', { name: 'Próxima' }).click()
+    await expect(page.getByRole('status')).toHaveText(`Exibindo ${count + 1}–40 de 40 produtos`)
+    await expect(pagination.getByRole('button', { name: 'Próxima' })).toBeDisabled()
+    expect(await rows.first().innerText()).not.toBe(firstName)
+    await pagination.getByRole('button', { name: 'Anterior' }).click()
+    await expect(page.getByRole('status')).toHaveText(`Exibindo 1–${count} de 40 produtos`)
+  }
+  await page.getByRole('searchbox', { name: 'Buscar nome, ID ou marca' }).fill('000800')
+  await expect(rows).toHaveCount(1)
+  await expect(page.getByRole('status')).toHaveText('Exibindo 1–1 de 1 produto')
+  const gap = await page.locator('.products__catalog').evaluate(catalog => {
+    const table = catalog.querySelector('.ui-table-scroll')!.getBoundingClientRect()
+    const footer = catalog.querySelector('.products__table-footer')!.getBoundingClientRect()
+    return footer.top - table.bottom
+  })
+  expect(gap).toBeLessThan(2)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.getByRole('searchbox', { name: 'Buscar nome, ID ou marca' }).fill('')
+  await expect(rows).toHaveCount(25)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  expect(catalogReads).toBe(1)
+})
+
 test('company permission and server errors offer read retry without a global fallback', async ({ page }) => {
   await mockSession(page)
   let status = 403
