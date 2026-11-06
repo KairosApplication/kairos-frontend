@@ -17,13 +17,13 @@ import { ApiHttpError } from '../../services/apiData'
 import type { CatalogProduct, ProductAvailability, ProductInput } from '../../types/productCatalog'
 import ProductForm from './ProductForm'
 import DeleteProduct from './DeleteProduct'
+import useProductPageSize from './useProductPageSize'
 import './styles.css'
 
 const labels: Record<ProductAvailability, string> = { stocked: 'Com saldo', partial: 'Saldo parcial', zero: 'Sem saldo', unlinked: 'Sem gôndola' }
 const tones = { stocked: 'success', partial: 'warning', zero: 'danger', unlinked: 'neutral' } as const
 const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').trim()
-const pageSize = 5
 const units = (product: CatalogProduct) => product.shelfUnits === null ? 'Não informado' : `${product.shelfUnits} un.`
 
 export default function Products() {
@@ -31,7 +31,10 @@ export default function Products() {
   const [categoryId, setCategoryId] = useState('all')
   const [availability, setAvailability] = useState('all')
   const [query, setQuery] = useState('')
-  const [page, setPage] = useState(1)
+  const [pageStart, setPageStart] = useState(0)
+  const layout = useRef<HTMLDivElement>(null)
+  const pageSize = useProductPageSize(layout, Boolean(data))
+  const setPage = (page: number) => setPageStart((page - 1) * pageSize)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [editor, setEditor] = useState<{ product?: CatalogProduct } | null>(null)
   const [deleting, setDeleting] = useState<CatalogProduct | null>(null)
@@ -48,7 +51,7 @@ export default function Products() {
       && (!search || [product.name, product.id, product.brand].some(value => normalize(value).includes(search)))
   }) ?? []
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize))
-  const currentPage = Math.min(page, pageCount)
+  const currentPage = Math.min(Math.floor(pageStart / pageSize) + 1, pageCount)
   const start = (currentPage - 1) * pageSize
   const rows = filtered.slice(start, start + pageSize)
   const attentionCount = data?.products.filter(product => ['zero', 'partial'].includes(productAvailability(product))).length ?? 0
@@ -94,7 +97,7 @@ export default function Products() {
     setEditor(null); setSelectedId(null); clearFilters()
     const next = await reload()
     const index = next?.products.findIndex(p => p.id === targetId) ?? -1
-    if (index >= 0) setPage(Math.floor(index / pageSize) + 1)
+    if (index >= 0) setPageStart(index)
     restoreFocus()
   }
   async function remove() {
@@ -118,7 +121,7 @@ export default function Products() {
           <div><dt>Saldo parcial</dt><dd>{data.products.filter(p => productAvailability(p) === 'partial').length}</dd></div>
           <div><dt>Sem saldo</dt><dd>{data.products.filter(p => productAvailability(p) === 'zero').length}</dd></div>
         </dl></Card>
-        <div className="products__layout">
+        <div ref={layout} className="products__layout">
           <aside className="products__categories" aria-label="Categorias de produtos">
             <h2>Categorias</h2><nav aria-label="Filtrar por categoria">
               <button type="button" aria-pressed={categoryId === 'all'} onClick={() => { setCategoryId('all'); setPage(1) }}>Todos os produtos<small>{data.products.length} produtos</small></button>

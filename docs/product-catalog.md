@@ -24,7 +24,7 @@ Os quatro indicadores, além do total, são exclusivos entre si. Saldo positivo 
 ## Interface
 
 - Busca por nome, ID ou marca, ignorando acentos, maiúsculas e espaços nas extremidades; combina categoria e situação.
-- Cinco registros por página, contador de resultados e limites nos botões. Alterar filtro retorna à primeira página.
+- Em telas largas, a quantidade por página se ajusta à altura da seção de categorias e das linhas da tabela. Em telas estreitas, são até 25 registros. O contador e os botões respeitam o resultado filtrado; alterar filtro retorna à primeira página. Páginas com poucos resultados não são esticadas até a altura das categorias.
 - Detalhes com ID, marca, categoria, preço, total nas gôndolas e todos os vínculos. Cada link abre `/mapa?gondola=ID` com a identificação real selecionada.
 - Escape fecha o modal e restaura o foco. Tabela mantém rolagem própria acessível por teclado em telas estreitas.
 - Carregamento, erro de rede/permissão/resposta inválida, nova tentativa e empresa vazia têm feedback. O rodapé mostra o momento da consulta no navegador.

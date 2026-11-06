@@ -30,17 +30,32 @@ function renderPage() {
 }
 async function setup() { renderPage(); await screen.findByRole('table') }
 
-it('derives indicators from actual quantities and paginates without losing limits', async () => {
+it('derives indicators from actual quantities and keeps a small catalog on one page', async () => {
   await setup()
   const summary = screen.getByRole('region', { name: 'Resumo do catálogo da empresa' })
   expect(Array.from(summary.querySelectorAll('dd'), item => item.textContent)).toEqual(['7', '3', '2', '1', '1'])
-  expect(within(screen.getByRole('table')).getAllByRole('row')).toHaveLength(6)
-  fireEvent.click(screen.getByRole('button', { name: 'Próxima' }))
-  expect(screen.getByRole('status').textContent).toBe('Exibindo 6–7 de 7 produtos')
+  expect(within(screen.getByRole('table')).getAllByRole('row')).toHaveLength(8)
+  expect(screen.getByRole('status').textContent).toBe('Exibindo 1–7 de 7 produtos')
   expect(screen.getByRole('button', { name: 'Próxima' }).hasAttribute('disabled')).toBe(true)
-  expect(screen.queryByRole('rowheader', { name: 'Coca-Cola 2 L' })).toBeNull()
-  fireEvent.click(screen.getByRole('button', { name: 'Anterior' }))
-  expect(screen.getByRole('status').textContent).toBe('Exibindo 1–5 de 7 produtos')
+  expect(screen.getByRole('button', { name: 'Anterior' }).hasAttribute('disabled')).toBe(true)
+})
+
+it.each(['all', 'Bebidas', 'Mercearia'])('paginates the full result set for %s and resets the page when searching', async category => {
+  api.db.products = Array.from({ length: 60 }, (_, index) => ({ id: index + 1, name: `Produto ${index + 1}`,
+    brand: 'Marca', price: 1, category: api.db.categories[index % 2] }))
+  api.db.links = []
+  await setup()
+  if (category !== 'all') fireEvent.click(screen.getByRole('button', { name: new RegExp(`^${category}`) }))
+  const total = category === 'all' ? 60 : 30
+  expect(screen.getByRole('status').textContent).toBe(`Exibindo 1–25 de ${total} produtos`)
+  expect(within(screen.getByRole('table')).getAllByRole('row')).toHaveLength(26)
+  fireEvent.click(screen.getByRole('button', { name: 'Próxima' }))
+  expect(screen.getByRole('status').textContent).toBe(`Exibindo 26–${Math.min(50, total)} de ${total} produtos`)
+  if (category === 'all') fireEvent.click(screen.getByRole('button', { name: 'Próxima' }))
+  expect(screen.getByRole('button', { name: 'Próxima' }).hasAttribute('disabled')).toBe(true)
+  fireEvent.change(screen.getByRole('searchbox'), { target: { value: category === 'Mercearia' ? 'Produto 60' : 'Produto 59' } })
+  expect(screen.getByRole('status').textContent).toBe('Exibindo 1–1 de 1 produto')
+  expect(api.fetch).toHaveBeenCalledTimes(1)
 })
 
 it('combines category, quantity and accent-insensitive search', async () => {
@@ -53,7 +68,7 @@ it('combines category, quantity and accent-insensitive search', async () => {
   fireEvent.click(screen.getByRole('button', { name: /^Higiene/ }))
   expect(screen.getByText('Nenhum produto encontrado')).toBeTruthy()
   fireEvent.click(screen.getByRole('button', { name: 'Limpar filtros' }))
-  expect(screen.getByRole('status').textContent).toBe('Exibindo 1–5 de 7 produtos')
+  expect(screen.getByRole('status').textContent).toBe('Exibindo 1–7 de 7 produtos')
 })
 
 it.each([[' fonte clara ', 'Água mineral 500 ml'], ['7', 'Café tradicional 500 g']])('searches real brand or ID %s', async (query, name) => {
